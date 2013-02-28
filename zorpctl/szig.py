@@ -1,5 +1,5 @@
 import socket
-from Messages import (
+from SZIGMessages import (
         MessageAuthorizeAccept, MessageAuthorizeReject,
         MessageCoredump, MessageGetChild,
         MessageGetDeadLockCheck, MessageGetLogLevel,
