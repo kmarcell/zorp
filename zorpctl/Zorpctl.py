@@ -4,7 +4,7 @@ class Zorpctl(object):
     def __init__(self):
         pass
 
-    def start(self):
+    def start(self, params):
         pass
 
     def stop(self):
@@ -71,7 +71,8 @@ HelpMessage =  ('start' + '\t\t  Starts the specified Zorp instance(s)\n' +
                 'reload-or-restart' + ' Reload or restart the specified Zorp instance(s)\n' +
                 'stop-session' + '\t  Stops the specified Zorp proxy session\n' +
                 'coredump' + '\t  Create core dumps of the specified Zorp instance(s)\n' +
-                'status' + '\t\t  Status of the specified Zorp instance(s). For additional information use status -v or --verbose option\n' +
+                'status' + '\t\t  Status of the specified Zorp instance(s). '+
+                            'For additional information use status -v or --verbose option\n' +
                 'authorize' + '\t  Lists and manages authorizations\n' +
                 'gui-status' + '\t  Status of the specified Zorp instance(s)\n' +
                 'version' + '\t\t  Display Zorp version information\n' +
@@ -102,12 +103,14 @@ Commands = {
             'declog' : Zorpctl.declog,
             'log' : Zorpctl.log,
             'deadlockcheck' : Zorpctl.deadlockcheck,
-            'szig' : Zorpctl.szig
+            'szig' : Zorpctl.szig,
             }
 
 parser.add_argument('command', choices=Commands.keys())
 parser.add_argument('params', nargs='*')
+args = parser.parse_args()
 
-#args = parser.parse_args(['start', 'default#0', 'default#3'])
-#print(args)
-parser.print_help()
+zorpctl = Zorpctl()
+command_function = Commands.get(args.command)
+command_function(zorpctl, args.params)
+
