@@ -1,65 +1,80 @@
 import argparse
+from UInterface import UInterface
+from Instances import InstanceHandler
+
+#TODO: Logging
 
 class Zorpctl(object):
     def __init__(self):
-        pass
+        raise NotImplementedError()
 
     def start(self, params):
-        pass
+        """
+        Starts Zorp instance(s) by instance name
+        expects sequence of name(s)
+        """
+        UInterface.informUser("Starting Zorp Firewall Suite:")
+
+        for instance in params:
+            if InstanceHandler.isRunning(instance):
+                UInterface.informUser("%s instance is already running!" % instance)
+            else:
+                result = InstanceHandler.start(instance)
+                UInterface.informUser(result)
 
     def stop(self):
-        pass
+        raise NotImplementedError()
 
     def restart(self):
-        pass
+        raise NotImplementedError()
 
     def reload(self):
-        pass
+        raise NotImplementedError()
 
     def force_start(self):
-        pass
+        raise NotImplementedError()
 
     def force_stop(self):
-        pass
+        raise NotImplementedError()
 
     def force_restart(self):
-        pass
+        raise NotImplementedError()
 
     def reload_or_restart(self):
-        pass
+        raise NotImplementedError()
 
     def stop_session(self):
-        pass
+        raise NotImplementedError()
 
     def coredump(self):
-        pass
+        raise NotImplementedError()
 
     def status(self):
-        pass
+        raise NotImplementedError()
 
     def authorize(self):
-        pass
+        raise NotImplementedError()
 
     def gui_status(self):
-        pass
+        raise NotImplementedError()
 
     def version(self):
-        pass
+        raise NotImplementedError()
 
     def inclog(self):
-        pass
+        raise NotImplementedError()
 
     def declog(self):
-        pass
+        raise NotImplementedError()
 
     def log(self):
-        pass
+        raise NotImplementedError()
 
     def deadlockcheck(self):
-        pass
+        raise NotImplementedError()
 
     def szig(self):
-        pass
+        raise NotImplementedError()
 
 HelpMessage =  ('start' + '\t\t  Starts the specified Zorp instance(s)\n' +
                 'stop' + '\t\t  Stops the specified Zorp instance(s)\n' +
@@ -108,9 +123,9 @@ Commands = {
 
 parser.add_argument('command', choices=Commands.keys())
 parser.add_argument('params', nargs='*')
-args = parser.parse_args()
+args = parser.parse_args(['start', 'alma'])
+print(args)
 
 zorpctl = Zorpctl()
 command_function = Commands.get(args.command)
 command_function(zorpctl, args.params)
-
