@@ -6,9 +6,9 @@ class InstanceRole(object):
 class InstanceRoleMaster(InstanceRole):
     @staticmethod
     def __str__():
-        return "master"
+        return "--master"
 
 class InstanceRoleSlave(InstanceRole):
     @staticmethod
     def __str__():
-        return "slave"
+        return "--slave"
