@@ -1,5 +1,6 @@
 from InstancesConf import InstancesConf
 from Roles import InstanceRoleMaster, InstanceRoleSlave
+import utils
 
 class CommandResult(object):
     def __init__(self, msg = None):
@@ -37,9 +38,9 @@ class InstanceHandler(object):
 
         Questions:
         - can we check that the running process with the pid is a Zorp?
-        - is it the right Zorp or an other?
-        - is that instance in the instances.conf, what if not?
+        + ANSWER: /proc/<pid>/status
         - what should we do with the pid file if there is no runnig processes with that pid?
+        + Delete it, from other method
         """
         return CommandResultFailure("Process %s is not running!" % process)
 
@@ -52,13 +53,15 @@ class InstanceHandler(object):
         return name, number
 
     def _start_process(self, instance):
-        cmd = ["zorp --as ", instance.zorp_argv,
-               (InstanceRoleSlave if instance.process_num else InstanceRoleMaster),
+        install_path = "/usr/lib/zorp/"
+        cmd = [install_path + "zorp --as ", instance.zorp_argv,
+               (InstanceRoleSlave() if instance.process_num else InstanceRoleMaster()),
                instance.process_name,
                ("--enable-core" if instance.enable_core else ""),
                ("--process-mode background" if not instance.auto_restart else "")
                ]
-        return cmd
+
+        return utils.makeStringFromSequence(cmd)
 
     def start(self, instance_name):
         result = []
@@ -68,14 +71,14 @@ class InstanceHandler(object):
                 if process_num:
                     instance.process_num = int(process_num)
                     instance.process_name = instance_name
-                    self._start_process(instance)
-                    result = self.isRunning(instance_name)
+                    result = self._start_process(instance)
+                    #result = self.isRunning(instance_name)
                 else:
                     for number in range(0, instance.number_of_processes):
                         instance.process_num = number
                         instance.process_name = instance.name + self.split_symbol + str(number)
-                        self._start_process(instance)
-                        result.append(self.isRunning(instance.process_name))
+                        result += self._start_process(instance)
+                        #result.append(self.isRunning(instance.process_name))
                 break
 
         return result
