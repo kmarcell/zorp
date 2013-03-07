@@ -24,13 +24,6 @@ class Zorpctl(object):
                 else:
                     result = handler.start(instance)
                     UInterface.informUser(result)
-        for instance in params:
-            handler = InstanceHandler()
-            if handler.isRunning(instance):
-                UInterface.informUser("%s instance is already running!" % instance)
-            else:
-                result = handler.start(instance)
-                UInterface.informUser(result)
 
     def stop(self):
         raise NotImplementedError()
@@ -38,8 +31,23 @@ class Zorpctl(object):
     def restart(self):
         raise NotImplementedError()
 
-    def reload(self):
-        raise NotImplementedError()
+    def reload(self, params):
+        """
+        Reloads Zorp instance(s) by instance name
+        expects sequence of name(s)
+        """
+        UInterface.informUser("Reloading Zorp Firewall Suite:")
+
+        handler = InstanceHandler()
+        if not params:
+            handler.reloadAll()
+        else:
+            for instance in params:
+                if handler.isRunning(instance):
+                    result = handler.reload(instance)
+                    UInterface.informUser(result)
+                else:
+                    UInterface.informUser("%s instance is not running!" % instance)
 
     def force_start(self):
         raise NotImplementedError()

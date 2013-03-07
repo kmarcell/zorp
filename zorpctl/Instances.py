@@ -1,6 +1,7 @@
 from InstancesConf import InstancesConf
 from Roles import InstanceRoleMaster, InstanceRoleSlave
 import utils
+from szig import SZIG
 
 class CommandResult(object):
     def __init__(self, msg = None):
@@ -85,3 +86,9 @@ class InstanceHandler(object):
                 break
 
         return result
+
+    def reloadAll(self):
+        raise NotImplementedError()
+
+    def reload(self, instance_name):
+        szig = SZIG(self.pidfile_dir + '/zorpctl.' + instance_name)
