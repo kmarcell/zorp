@@ -27,11 +27,11 @@ class Handler(object):
 
     _success_prefix = "OK "
 
-    def __init__(self):
+    def __init__(self, server_address):
         self.max_command_length = 4096
         self.response_length = 4096
         self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        self.server_address = './uds_socket'
+        self.server_address = server_address
 
         self.socket.connect(self.server_address)
 
@@ -106,8 +106,8 @@ class Handler(object):
 
 class SZIG():
 
-    def __init__(self):
-        self.handler = Handler()
+    def __init__(self, socket_path):
+        self.handler = Handler(socket_path)
 
     def get_value(self, key):
         response = self.handler.talk(MessageGetValue(key))
