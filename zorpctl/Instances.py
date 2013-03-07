@@ -63,6 +63,9 @@ class InstanceHandler(object):
 
         return utils.makeStringFromSequence(cmd)
 
+    def startAll(self):
+        raise NotImplementedError()
+
     def start(self, instance_name):
         result = []
         inst_name, process_num = self._splitInstanceName(instance_name)

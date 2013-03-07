@@ -14,6 +14,16 @@ class Zorpctl(object):
         """
         UInterface.informUser("Starting Zorp Firewall Suite:")
 
+        handler = InstanceHandler()
+        if not params:
+            handler.startAll()
+        else:
+            for instance in params:
+                if handler.isRunning(instance):
+                    UInterface.informUser("%s instance is already running!" % instance)
+                else:
+                    result = handler.start(instance)
+                    UInterface.informUser(result)
         for instance in params:
             handler = InstanceHandler()
             if handler.isRunning(instance):
