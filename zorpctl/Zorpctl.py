@@ -77,7 +77,7 @@ class Zorpctl(object):
         raise NotImplementedError()
 
     def version(self):
-        raise NotImplementedError()
+        call([InstanceHandler.install_path + 'zorp', "--version"])
 
     def inclog(self):
         raise NotImplementedError()
