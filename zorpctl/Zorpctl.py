@@ -31,7 +31,8 @@ class Zorpctl(object):
     def restart(self):
         raise NotImplementedError()
 
-    def reload(self, params):
+    @staticmethod
+    def reload(params):
         """
         Reloads Zorp instance(s) by instance name
         expects sequence of name(s)
