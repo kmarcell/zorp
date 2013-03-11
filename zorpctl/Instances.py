@@ -2,6 +2,7 @@ from InstancesConf import InstancesConf
 from Roles import InstanceRoleMaster, InstanceRoleSlave
 import utils
 from szig import SZIG
+from InstanceClass import Instance
 
 class CommandResult(object):
     def __init__(self, msg = None):
@@ -60,28 +61,52 @@ class InstanceHandler(object):
     def startAll(self):
         raise NotImplementedError()
 
-    def start(self, instance_name):
-        result = []
-        inst_name, process_num = self._splitInstanceName(instance_name)
+    def _searchInstanceThanCallFunctionWithParamsToInstance(self, instance_name, function, args):
         for instance in InstancesConf():
-            if instance.name == inst_name:
-                if process_num:
-                    instance.process_num = int(process_num)
-                    instance.process_name = instance_name
-                    result = self._start_process(instance)
-                    #result = self.isRunning(instance_name)
-                else:
-                    for number in range(0, instance.number_of_processes):
-                        instance.process_num = number
-                        instance.process_name = instance.name + self.split_symbol + str(number)
-                        result += self._start_process(instance)
-                        #result.append(self.isRunning(instance.process_name))
+            if instance.name == instance_name:
+                result = function(instance, *args)
                 break
+        return result
+
+    def _callFunctionToInstanceProcesses(self, instance, function):
+        result = []
+        for i in range(0, instance.number_of_processes):
+            instance.process_num = i
+            result.append(function(instance))
+
+        return result
+
+    def __setProcessNumThanStart(self, instance, process_num):
+        instance.process_num = process_num
+        return self._start_process(instance)
+
+    def start(self, instance_name):
+        inst_name, process_num = Instance.splitInstanceName(instance_name)
+        if process_num != None:
+            #process_num can be zero which is not None but it is a False in statements
+            func = self._searchInstanceThanCallFunctionWithParamsToInstance
+            result = func(inst_name, self.__setProcessNumThanStart, [process_num])
+        else:
+            func1 = self._searchInstanceThanCallFunctionWithParamsToInstance
+            func2 = self._callFunctionToInstanceProcesses
+            result = func1(inst_name, func2, [self._start_process])
 
         return result
 
     def reloadAll(self):
         raise NotImplementedError()
 
+    def _reload_process(self, instance):
+        #szig = SZIG(self.pidfile_dir + '/zorpctl.' + instance.process_name)
+        return self.pidfile_dir + '/zorpctl.' + instance.process_name
+
     def reload(self, instance_name):
-        szig = SZIG(self.pidfile_dir + '/zorpctl.' + instance_name)
+        inst_name, process_num = Instance.splitInstanceName(instance_name)
+        if process_num != None:
+            result = self._reload_process(Instance(name=inst_name, process_num=process_num))
+        else:
+            func1 = self._searchInstanceThanCallFunctionWithParamsToInstance
+            func2 = self._callFunctionToInstanceProcesses
+            result = func1(inst_name, func2, [self._reload_process])
+
+        return result
