@@ -7,6 +7,7 @@ class UInterface(object):
     @staticmethod
     def informUser(message):
         if utils.isSequence(message):
-            print(utils.makeStringFromSequence(message))
+            for msg in message:
+                print(msg)
         else:
             print(message)
