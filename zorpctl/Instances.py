@@ -25,10 +25,11 @@ class CommandResultFailure(CommandResult):
         return False
 
 class InstanceHandler(object):
+    prefix = "" #TODO: @PREFIX@
+    install_path = prefix + "/usr/lib/zorp/"
+
     def __init__(self):
-        self.prefix = "" #TODO: @PREFIX@
         self.pidfile_dir = self.prefix + "/var/run/zorp"
-        self.split_symbol = '#'
 
     def isRunning(self, process):
         """
@@ -45,17 +46,9 @@ class InstanceHandler(object):
         """
         return CommandResultFailure("Process %s is not running!" % process)
 
-    def _splitInstanceName(self, instance_name):
-        """
-        Splits the instance name from the process number.
-        example: 'default#0' -> ('default', 0)
-        """
-        name, number = instance_name.split(self.split_symbol)
-        return name, number
-
     def _start_process(self, instance):
-        install_path = "/usr/lib/zorp/"
-        cmd = [install_path + "zorp --as ", instance.zorp_argv,
+
+        cmd = [self.install_path + "zorp --as ", instance.zorp_argv,
                (InstanceRoleSlave() if instance.process_num else InstanceRoleMaster()),
                instance.process_name,
                ("--enable-core" if instance.enable_core else ""),
