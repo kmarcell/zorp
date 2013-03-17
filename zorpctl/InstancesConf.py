@@ -5,21 +5,28 @@ class InstancesConf(object):
     def __init__(self):
         self.prefix = "" #TODO: @PREFIX@
         self.instances_conf_path = self.prefix + "/etc/zorp/instances.conf"
+        self.instances_conf_file = None
         self.instances_conf_file = open(self.instances_conf_path, 'r')
 
     def __del__(self):
-        self.instances_conf_file.close()
+        if self.instances_conf_file:
+            self.instances_conf_file.close()
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        line = self.instances_conf_file.readline()
+        line = self._read()
         if line:
             return self._createInstance(line)
         else:
             raise StopIteration
 
+    def _read(self):
+        line = self.instances_conf_file.readline()
+        while line.startswith('#') or line == '\n':
+            line = self.instances_conf_file.readline()
+        return line
 
     def _parseZorpctlArgs(self, zorpctl_argv):
         parser = argparse.ArgumentParser()
