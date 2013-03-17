@@ -165,9 +165,7 @@ class SZIG():
             raise SZIGError("Deadlock Check has not been set.")
 
     def reload(self):
-        response =  self.handler.talk(MessageReload())
-        if not response.is_succeeded:
-            raise SZIGError("Reload failed! Response was: %s" % response.value)
+        self.handler.talk(MessageReload())
 
     def reload_result(self):
         response =  self.handler.talk(MessageReloadResult())
