@@ -4,6 +4,14 @@ from Instances import InstanceHandler
 from subprocess import call
 
 #TODO: Logging
+"""
+Questions:
+- when reload default given and default has 4 process and 2 is not running
+  which one do we want to reload? All or just the running ones?
+- When does the instance considered running? (When all processes running or if there is)
+- Do we want the @file option for files containing instance name lists?
+- How does 3.4 handling instance processes?
+"""
 
 class Zorpctl(object):
 
