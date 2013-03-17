@@ -28,11 +28,7 @@ class Zorpctl(object):
             handler.startAll()
         else:
             for instance in params:
-                if handler.isRunning(instance):
-                    UInterface.informUser("%s instance is already running!" % instance)
-                else:
-                    result = handler.start(instance)
-                    UInterface.informUser(result)
+                UInterface.informUser(handler.start(instance))
 
     def stop(self):
         raise NotImplementedError()
@@ -53,11 +49,7 @@ class Zorpctl(object):
             handler.reloadAll()
         else:
             for instance in params:
-                if handler.isRunning(instance):
-                    result = handler.reload(instance)
-                    UInterface.informUser(result)
-                else:
-                    UInterface.informUser("%s instance is not running!" % instance)
+                UInterface.informUser(handler.reload(instance))
 
     def force_start(self):
         raise NotImplementedError()
