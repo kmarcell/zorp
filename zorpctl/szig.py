@@ -70,7 +70,7 @@ class Handler(object):
         if request_length > self.max_command_length:
             raise SZIGError("Given request is longer than %s" % self.max_command_length)
 
-        sent_data_length = self.socket.send(request)
+        sent_data_length = self.socket.send(bytes(request, 'UTF-8'))
         if sent_data_length < request_length:
             msg = "There was an error while sending the request (%s/%s)!" % (sent_data_length, request_length)
             raise SZIGError(msg, (sent_data_length, request_length))
@@ -89,7 +89,7 @@ class Handler(object):
         if not response:
             raise SZIGError("There was an error while receiving the answer!")
 
-        return response
+        return response.decode('UTF-8')
 
     def _isSucceeded(self, response):
         """
