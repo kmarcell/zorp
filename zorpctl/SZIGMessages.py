@@ -8,7 +8,7 @@ class Message(object):
         return utils.makeStringFromSequence(self.params) if utils.isSequence(self.params) else self.params
 
     def __str__(self):
-        return "%s %s\n" % (self.command, self._strParams() if self.params else "")
+        return "%s%s\n" % (self.command, " " + self._strParams() if self.params else "")
 
 class MessageGetValue(Message):
     command = "GETVALUE"
