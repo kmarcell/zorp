@@ -54,12 +54,13 @@ class InstanceHandler(object):
         return CommandResultSuccess("Process %s is running!" % process)
 
     def _searchInstanceThanCallFunctionWithParamsToInstance(self, instance_name, function, args):
+        result = CommandResultFailure("No such process!")
         try:
             for instance in InstancesConf():
                 if instance.name == instance_name:
                     result = function(instance, *args)
                     break
-            return result
+            return result if result else CommandResultFailure("instance %s not found!" % instance_name)
         except IOError as e:
             return CommandResultFailure(e.strerror)
 
