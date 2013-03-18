@@ -78,10 +78,11 @@ class Zorpctl(object):
         s_parse.add_argument('-v', '--verbose', action='store_true')
         s_parse.add_argument('params', nargs='*')
         s_args = s_parse.parse_args(params)
-        print(s_args)
 
+        handler = InstanceHandler()
         for instance in s_args.params:
-            pass
+            status = handler.detailedStatus(instance) if s_args.verbose else handler.status(instance)
+            UInterface.informUser(status)
 
     def authorize(self):
         raise NotImplementedError()
