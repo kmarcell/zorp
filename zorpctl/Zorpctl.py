@@ -69,8 +69,19 @@ class Zorpctl(object):
     def coredump(self):
         raise NotImplementedError()
 
-    def status(self):
-        raise NotImplementedError()
+    @staticmethod
+    def status(params):
+        s_parse = argparse.ArgumentParser(
+             prog='zorpctl status',
+             description="Displays status of the specified Zorp instance(s)." +
+                  "For additional information use status -v or --verbose option")
+        s_parse.add_argument('-v', '--verbose', action='store_true')
+        s_parse.add_argument('params', nargs='*')
+        s_args = s_parse.parse_args(params)
+        print(s_args)
+
+        for instance in s_args.params:
+            pass
 
     def authorize(self):
         raise NotImplementedError()
@@ -145,9 +156,8 @@ Commands = {
             }
 
 parser.add_argument('command', choices=Commands.keys())
-parser.add_argument('params', nargs='*')
-#args = parser.parse_args()
-#
-##zorpctl = Zorpctl()
-#command_function = Commands.get(args.command)
-#command_function(args.params)
+parser.add_argument('params', nargs=argparse.REMAINDER)
+args = parser.parse_args()
+
+command_function = Commands.get(args.command)
+command_function(args.params)
