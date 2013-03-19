@@ -27,15 +27,16 @@ class CommandResultFailure(CommandResult):
         return False
 
 class ProcessStatus(object):
-    def __init__(self, running, pid):
+    def __init__(self, running, pid, threads):
         self.running = running
         self.pid = pid
+        self.threads = threads
 
     def __str__(self):
         if not self.running:
             return str(self.running)
         else:
-            return "%s ,pid %d" % (self.running, self.pid)
+            return "%s, %d threads active, pid %d" % (self.running, self.threads, self.pid)
 
 class InstanceHandler(object):
     prefix = "" #TODO: @PREFIX@
@@ -155,7 +156,10 @@ class InstanceHandler(object):
     def _process_status(self, instance):
         running = self.isRunning(instance.process_name)
         pid = self._getProcessPid(instance.process_name)
-        return ProcessStatus(running, pid)
+        szig = SZIG(instance.process_name)
+        threads = szig.get_value('stats.threads_running')
+
+        return ProcessStatus(running, pid, threads)
 
     def status(self, instance_name):
         inst_name, process_num = Instance.splitInstanceName(instance_name)
