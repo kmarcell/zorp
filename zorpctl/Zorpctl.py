@@ -80,9 +80,12 @@ class Zorpctl(object):
         s_args = s_parse.parse_args(params)
 
         handler = InstanceHandler()
-        for instance in s_args.params:
-            status = handler.detailedStatus(instance) if s_args.verbose else handler.status(instance)
-            UInterface.informUser(status)
+        if s_args.params:
+            for instance in s_args.params:
+                status = handler.detailedStatus(instance) if s_args.verbose else handler.status(instance)
+                UInterface.informUser(status)
+        else:
+            handler.detailedStatusAll() if s_args.verbose else handler.statusAll()
 
     def authorize(self):
         raise NotImplementedError()
