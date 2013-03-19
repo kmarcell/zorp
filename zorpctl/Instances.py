@@ -26,10 +26,32 @@ class CommandResultFailure(CommandResult):
     def __bool__(self):
         return False
 
+class ProcessStatus(object):
+    def __init__(self, running, pid):
+        self.running = running
+        self.pid = pid
+
+    def __str__(self):
+        if not self.running:
+            return str(self.running)
+        else:
+            return "%s ,pid %d" % (self.running, self.pid)
+
 class InstanceHandler(object):
     prefix = "" #TODO: @PREFIX@
     install_path = prefix + "/usr/lib/zorp/"
     pidfile_dir = prefix + "/var/run/zorp/"
+
+    def _getProcessPid(self, process):
+        try:
+            pid_file = open(self.pidfile_dir + 'zorp-' + process + '.pid')
+        except IOError:
+            return None
+
+        pid = int(pid_file.read())
+        pid_file.close()
+
+        return pid
 
     def isRunning(self, process):
         """
@@ -39,22 +61,19 @@ class InstanceHandler(object):
 
         FIXME: Delete pid file if there is no runnig processes with that pid
         """
-        try:
-            pid_file = open(self.pidfile_dir + 'zorp-' + process + '.pid')
-        except IOError:
-            return CommandResultFailure("Process %s is not running!" % process)
+        pid = self._getProcessPid(process)
+        if not pid:
+            return CommandResultFailure("Process %s: not running" % process)
 
-        pid = int(pid_file.read())
-        pid_file.close()
         try:
             open('/proc/' + str(pid) + '/status')
         except IOError:
             return CommandResultFailure("Invalid pid file no running process with pid %d!" % pid)
 
-        return CommandResultSuccess("Process %s is running!" % process)
+        return CommandResultSuccess("Process %s: running" % process)
 
     def _searchInstanceThanCallFunctionWithParamsToInstance(self, instance_name, function, args):
-        result = CommandResultFailure("No such process!")
+        result = None
         try:
             for instance in InstancesConf():
                 if instance.name == instance_name:
@@ -132,3 +151,33 @@ class InstanceHandler(object):
             result = func1(inst_name, func2, [self._reload_process])
 
         return result
+
+    def _process_status(self, instance):
+        running = self.isRunning(instance.process_name)
+        pid = self._getProcessPid(instance.process_name)
+        return ProcessStatus(running, pid)
+
+    def status(self, instance_name):
+        inst_name, process_num = Instance.splitInstanceName(instance_name)
+        if process_num != None:
+            result = self._process_status(Instance(name=inst_name, process_num=process_num))
+        else:
+            func1 = self._searchInstanceThanCallFunctionWithParamsToInstance
+            func2 = self._callFunctionToInstanceProcesses
+            result = func1(inst_name, func2, [self._process_status])
+
+        return result
+
+    def detailedStatus(self, instance_name):
+        raise NotImplementedError()
+
+    def statusAll(self):
+        try:
+            for instance in InstancesConf():
+                result = self._callFunctionToInstanceProcesses(instance, self._process_status)
+                UInterface.informUser(result)
+        except IOError as e:
+            return CommandResultFailure(e.strerror)
+
+    def detailedStatusAll(self):
+        raise NotImplementedError()
