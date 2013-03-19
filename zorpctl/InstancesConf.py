@@ -26,7 +26,7 @@ class InstancesConf(object):
         line = self.instances_conf_file.readline()
         while line.startswith('#') or line == '\n':
             line = self.instances_conf_file.readline()
-        return line
+        return line[:-1] if line[-1:] == '\n' else line
 
     def _parseZorpctlArgs(self, zorpctl_argv):
         parser = argparse.ArgumentParser()
