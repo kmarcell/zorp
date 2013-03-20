@@ -27,3 +27,6 @@ zorp/zorp
 zorpblgen/zorpblgen
 zorpconfig.h
 zorpctl/zorpctl
+.metadata
+.project
+.pydevproject
