@@ -30,3 +30,4 @@ zorpctl/zorpctl
 .metadata
 .project
 .pydevproject
+*.pyc
