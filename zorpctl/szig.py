@@ -26,6 +26,7 @@ class Handler(object):
     """
 
     _success_prefix = "OK "
+    _fail_prefix = "FAIL "
 
     def __init__(self, server_address):
         self.max_command_length = 4096
@@ -102,7 +103,13 @@ class Handler(object):
         """
         Cuts the defined prefix from a string.
         """
-        return string[len(self._success_prefix):]
+        if string[:len(self._success_prefix)] == self._success_prefix:
+            string =  string[len(self._success_prefix):]
+        else:
+            if string[:len(self._fail_prefix)] == self._fail_prefix:
+                string = string[len(self._fail_prefix):]
+
+        return string
 
 class SZIG():
 
