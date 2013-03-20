@@ -89,7 +89,7 @@ class Handler(object):
         if not response:
             raise SZIGError("There was an error while receiving the answer!")
 
-        return response.decode('UTF-8')
+        return response.decode('UTF-8')[:-1]
 
     def _isSucceeded(self, response):
         """
