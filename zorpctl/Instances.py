@@ -27,7 +27,7 @@ class CommandResultFailure(CommandResult):
         return False
 
 class ProcessStatus(object):
-    def __init__(self, running, pid, threads):
+    def __init__(self, running, pid=None, threads=None):
         self.running = running
         self.pid = pid
         self.threads = threads
@@ -155,11 +155,13 @@ class InstanceHandler(object):
 
     def _process_status(self, instance):
         running = self.isRunning(instance.process_name)
-        pid = self._getProcessPid(instance.process_name)
-        szig = SZIG(instance.process_name)
-        threads = szig.get_value('stats.threads_running')
+        status = ProcessStatus(running)
+        if running:
+            status.pid = self._getProcessPid(instance.process_name)
+            szig = SZIG(self.pidfile_dir + 'zorpctl.' + instance.process_name)
+            status.threads = int(szig.get_value('stats.threads_running'))
 
-        return ProcessStatus(running, pid, threads)
+        return status
 
     def status(self, instance_name):
         inst_name, process_num = Instance.splitInstanceName(instance_name)
