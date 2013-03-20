@@ -1,6 +1,7 @@
 from InstancesConf import InstancesConf
 from Roles import InstanceRoleMaster, InstanceRoleSlave
 import utils
+import os
 from UInterface import UInterface
 from szig import SZIG
 from InstanceClass import Instance
@@ -27,8 +28,9 @@ class CommandResultFailure(CommandResult):
         return False
 
 class ProcessStatus(object):
-    def __init__(self, running, pid=None, threads=None):
+    def __init__(self, running, reloaded=None, pid=None, threads=None):
         self.running = running
+        self.reloaded = reloaded
         self.pid = pid
         self.threads = threads
 
@@ -36,7 +38,11 @@ class ProcessStatus(object):
         if not self.running:
             return str(self.running)
         else:
-            return "%s, %d threads active, pid %d" % (self.running, self.threads, self.pid)
+            status = str(self.running) + ", "
+            if not self.reloaded:
+                status += "policy NOT reloaded, "
+            status += "%d threads active, pid %d" % (self.threads, self.pid)
+            return status
 
 class InstanceHandler(object):
     prefix = "" #TODO: @PREFIX@
@@ -160,6 +166,10 @@ class InstanceHandler(object):
             status.pid = self._getProcessPid(instance.process_name)
             szig = SZIG(self.pidfile_dir + 'zorpctl.' + instance.process_name)
             status.threads = int(szig.get_value('stats.threads_running'))
+            policy_file = szig.get_value('info.policy.file')
+            timestamp_szig = szig.get_value('info.policy.file_stamp')
+            timestamp_os = os.path.getmtime(policy_file)
+            status.reloaded = str(timestamp_szig) == str(timestamp_os).split('.')[0]
 
         return status
 
