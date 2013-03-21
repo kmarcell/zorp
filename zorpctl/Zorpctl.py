@@ -75,6 +75,12 @@ class Zorpctl(object):
 
     @staticmethod
     def reload_or_restart(params):
+        """
+        Tries to reload Zorp instance(s) by instance name
+        if not succeeded than tries to restart instance(s)
+        expects sequence of name(s)
+        """
+        UInterface.informUser("Reloading or Restarting Zorp Firewall Suite:")
         handler = InstanceHandler()
         if not params:
             status = handler.reloadAll()
