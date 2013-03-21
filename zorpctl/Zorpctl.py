@@ -25,7 +25,7 @@ class Zorpctl(object):
 
         handler = InstanceHandler()
         if not params:
-            handler.startAll()
+            UInterface.informUser(handler.startAll())
         else:
             for instance in params:
                 UInterface.informUser(handler.start(instance))

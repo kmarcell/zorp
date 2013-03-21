@@ -117,10 +117,11 @@ class InstanceHandler(object):
         return CommandResultSuccess(utils.makeStringFromSequence(cmd))
 
     def startAll(self):
+        result = []
         try:
             for instance in InstancesConf():
-                result = self._callFunctionToInstanceProcesses(instance, self._start_process)
-                UInterface.informUser(result)
+                result += self._callFunctionToInstanceProcesses(instance, self._start_process)
+            return result
         except IOError as e:
             return CommandResultFailure(e.strerror)
 
