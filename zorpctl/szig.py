@@ -175,8 +175,8 @@ class SZIG():
         self.handler.talk(MessageReload())
 
     def reload_result(self):
-        response =  self.handler.talk(MessageReloadResult())
-        return response.value
+        result = self.handler.talk(MessageReloadResult())
+        return result.is_succeeded
 
     def stop_session(self, instance):
         response = self.handler.talk(MessageStopSession(instance))
