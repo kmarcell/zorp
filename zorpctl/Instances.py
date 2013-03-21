@@ -147,12 +147,17 @@ class InstanceHandler(object):
             return CommandResultFailure("Instance %s is not running! You can not reload it." % instance.process_name)
         szig = SZIG(self.pidfile_dir + 'zorpctl.' + instance.process_name)
         szig.reload()
-        return instance.process_name, szig.reload_result()
+        if szig.reload_result():
+            result = CommandResultSuccess("%s: Reload successful" % instance.process_name)
+        else:
+            result = CommandResultFailure("%s: Reload failed" % instance.process_name)
+        return result
 
     def reload(self, instance_name):
         inst_name, process_num = Instance.splitInstanceName(instance_name)
         if process_num != None:
-            result = [self._reload_process(Instance(name=inst_name, process_num=process_num))]
+            instance = Instance(name=inst_name, process_num=process_num)
+            result = self._reload_process(instance)
         else:
             func1 = self._searchInstanceThanCallFunctionWithParamsToInstance
             func2 = self._callFunctionToInstanceProcesses

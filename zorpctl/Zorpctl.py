@@ -49,9 +49,7 @@ class Zorpctl(object):
             handler.reloadAll()
         else:
             for instance in params:
-                for process_name, success in handler.reload(instance):
-                    result = process_name + ": " + "Reload successful" if success else "Reload failed"
-                    UInterface.informUser(result)
+                UInterface.informUser(handler.reload(instance))
 
     def force_start(self):
         raise NotImplementedError()
