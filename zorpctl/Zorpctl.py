@@ -61,26 +61,25 @@ class Zorpctl(object):
         raise NotImplementedError()
 
     @staticmethod
-    def _ifNotReloadedRestart(process_name, success):
-        if success:
-            UInterface.informUser("%s: Reload successful" % process_name)
-        else:
-            result = Zorpctl.restart(process_name)
-            if not result:
-                UInterface.informUser("Both reload and restart failed with %s" % process_name)
-            else:
-                UInterface.informUser("%s: Restart successful" % process_name)
-
-    @staticmethod
     def reload_or_restart(params):
         handler = InstanceHandler()
         if not params:
-            for process_name, success in handler.reloadAll():
-                Zorpctl._ifNotReloadedRestart(process_name, success)
+            status = handler.reloadAll()
         else:
+            status = []
             for instance in params:
-                for process_name, success in handler.reload(instance):
-                    Zorpctl._ifNotReloadedRestart(process_name, success)
+                status += handler.reload(instance)
+
+        for success in status:
+            if success:
+                UInterface.informUser(success)
+            else:
+                result = Zorpctl.restart(str(success).split(':')[0])
+                if result:
+                    UInterface.informUser("%s: Restart successful" % result)
+                else:
+                    UInterface.informUser("Both reload and restart failed")
+                    UInterface.informUser(result)
 
     def stop_session(self):
         raise NotImplementedError()
