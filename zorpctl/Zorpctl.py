@@ -30,11 +30,24 @@ class Zorpctl(object):
             for instance in params:
                 UInterface.informUser(handler.start(instance))
 
-    def stop(self):
-        raise NotImplementedError()
+    @staticmethod
+    def stop(params):
+        """
+        Stops Zorp instance(s) by instance name
+        expects sequence of name(s)
+        """
+        UInterface.informUser("Stopping Zorp Firewall Suite:")
 
-    def restart(self):
-        raise NotImplementedError()
+        handler = InstanceHandler()
+        if not params:
+            UInterface.informUser(handler.stopAll())
+        else:
+            for instance in params:
+                UInterface.informUser(handler.stop(instance))
+
+    @staticmethod
+    def restart(params):
+        return "R"
 
     @staticmethod
     def reload(params):

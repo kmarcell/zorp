@@ -1,7 +1,7 @@
 from InstancesConf import InstancesConf
 from Roles import InstanceRoleMaster, InstanceRoleSlave
 import utils
-import os
+import os, signal, time
 from UInterface import UInterface
 from szig import SZIG
 from InstanceClass import Instance
@@ -48,6 +48,10 @@ class InstanceHandler(object):
     prefix = "" #TODO: @PREFIX@
     install_path = prefix + "/usr/lib/zorp/"
     pidfile_dir = prefix + "/var/run/zorp/"
+
+    def __init__(self):
+        self.force = False
+        #variable indicates if force is active by force commands
 
     def _getProcessPid(self, process):
         try:
@@ -209,3 +213,31 @@ class InstanceHandler(object):
 
     def detailedStatusAll(self):
         raise NotImplementedError()
+
+    def _stop_process(self, instance):
+        pid = self._getProcessPid(instance.process_name)
+        sig = signal.SIGKILL if self.force else signal.SIGTERM
+        os.kill(pid, sig)
+        timeout = 1
+        while timeout < 5 and self.isRunning(instance.process_name):
+            time.sleep(1)
+            timeout += 1
+        if self.isRunning(instance.process_name):
+            return CommandResultFailure("Zorp instance did not exit in time" +
+                                        "(instance='%s', pid='%d', signo='%d', timeout='%d')" %
+                                        instance.process_name, pid, sig, timeout)
+        else:
+            return CommandResultSuccess("Instance %s stopped" % instance.process_name)
+
+    def stop(self, instance_name):
+        inst_name, process_num = Instance.splitInstanceName(instance_name)
+        if process_num != None:
+            if not self.isRunning(inst_name):
+                return CommandResultFailure("Instance %s is not running" % inst_name)
+            result = self._stop_process(inst_name)
+        else:
+            func1 = self._searchInstanceThanCallFunctionWithParamsToInstance
+            func2 = self._callFunctionToInstanceProcesses
+            result = func1(inst_name, func2, [self._stop_process])
+
+        return result
