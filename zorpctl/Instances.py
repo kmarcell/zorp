@@ -140,7 +140,13 @@ class InstanceHandler(object):
         return result
 
     def reloadAll(self):
-        raise NotImplementedError()
+        result = []
+        try:
+            for instance in InstancesConf():
+                result += self._callFunctionToInstanceProcesses(instance, self._reload_process)
+            return result
+        except IOError as e:
+            return CommandResultFailure(e.strerror)
 
     def _reload_process(self, instance):
         if not self.isRunning(instance.process_name):

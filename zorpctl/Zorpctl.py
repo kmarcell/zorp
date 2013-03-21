@@ -46,7 +46,7 @@ class Zorpctl(object):
 
         handler = InstanceHandler()
         if not params:
-            handler.reloadAll()
+            UInterface.informUser(handler.reloadAll())
         else:
             for instance in params:
                 UInterface.informUser(handler.reload(instance))
