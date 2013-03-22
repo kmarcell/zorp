@@ -128,7 +128,8 @@ class Zorpctl(object):
     def gui_status(self):
         raise NotImplementedError()
 
-    def version(self):
+    @staticmethod
+    def version(params):
         call([InstanceHandler.install_path + 'zorp', "--version"])
 
     def inclog(self):
