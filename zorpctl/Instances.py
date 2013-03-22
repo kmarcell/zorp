@@ -244,3 +244,12 @@ class InstanceHandler(object):
             result = func1(inst_name, func2, [self._stop_process])
 
         return result
+
+    def stopAll(self):
+        result = []
+        try:
+            for instance in InstancesConf():
+                result += self._callFunctionToInstanceProcesses(instance, self._stop_process)
+            return result
+        except IOError as e:
+            return CommandResultFailure(e.strerror)
