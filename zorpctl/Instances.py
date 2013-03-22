@@ -54,11 +54,7 @@ class InstanceHandler(object):
         #variable indicates if force is active by force commands
 
     def _getProcessPid(self, process):
-        try:
-            pid_file = open(self.pidfile_dir + 'zorp-' + process + '.pid')
-        except IOError:
-            return None
-
+        pid_file = open(self.pidfile_dir + 'zorp-' + process + '.pid')
         pid = int(pid_file.read())
         pid_file.close()
 
@@ -72,9 +68,13 @@ class InstanceHandler(object):
 
         FIXME: Delete pid file if there is no runnig processes with that pid
         """
-        pid = self._getProcessPid(process)
-        if not pid:
-            return CommandResultFailure("Process %s: not running" % process)
+        try:
+            pid = self._getProcessPid(process)
+        except IOError as e:
+            if e.strerror == "Permission denied":
+                return CommandResultFailure(e.strerror)
+            else:
+                return CommandResultFailure("Process %s: not running" % process)
 
         try:
             open('/proc/' + str(pid) + '/status')
