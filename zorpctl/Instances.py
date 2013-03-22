@@ -1,8 +1,6 @@
 from InstancesConf import InstancesConf
 from Roles import InstanceRoleMaster, InstanceRoleSlave
-import utils
-import os, signal, time
-from UInterface import UInterface
+import os, signal, time, subprocess
 from szig import SZIG
 from InstanceClass import Instance
 
@@ -111,14 +109,31 @@ class InstanceHandler(object):
                                         % (process_num, instance.number_of_processes))
 
     def _start_process(self, instance):
+        if self.isRunning(instance.process_name):
+            return CommandResultFailure("Process %s: is already running" % instance.process_name)
+        args = [self.install_path + "zorp", "--as"]
+        args += instance.zorp_argv.split()
+        args.append("--slave" if instance.process_num else "--master")
+        args.append(instance.process_name)
+        if instance.enable_core:
+            args.append("--enable-core")
+        if instance.auto_restart:
+            args += ["--process-mode" ,"background"]
 
-        cmd = [self.install_path + "zorp --as ", instance.zorp_argv,
-               (InstanceRoleSlave() if instance.process_num else InstanceRoleMaster()),
-               instance.process_name,
-               ("--enable-core" if instance.enable_core else ""),
-               ("--process-mode background" if not instance.auto_restart else "")]
+        subprocess.Popen(args, stderr=open("/dev/null", 'w'))
+        timeout = 1
+        while timeout <= 5 and not self.isRunning(instance.process_name):
+            time.sleep(1)
+            timeout += 1
 
-        return CommandResultSuccess(utils.makeStringFromSequence(cmd))
+        running = self.isRunning(instance.process_name)
+        if running:
+            return running
+        else:
+            return CommandResultFailure(
+                    "Zorp instance did not start in time" +
+                    "(instance='%s', timeout='%d')" %
+                    (instance.process_name, timeout))
 
     def startAll(self):
         result = []
