@@ -180,12 +180,16 @@ class InstanceHandler(object):
         status = ProcessStatus(running)
         if running:
             status.pid = self._getProcessPid(instance.process_name)
-            szig = SZIG(self.pidfile_dir + 'zorpctl.' + instance.process_name)
-            status.threads = int(szig.get_value('stats.threads_running'))
-            policy_file = szig.get_value('info.policy.file')
-            timestamp_szig = szig.get_value('info.policy.file_stamp')
-            timestamp_os = os.path.getmtime(policy_file)
-            status.reloaded = str(timestamp_szig) == str(timestamp_os).split('.')[0]
+            try:
+                szig = SZIG(self.pidfile_dir + 'zorpctl.' + instance.process_name)
+                status.threads = int(szig.get_value('stats.threads_running'))
+                policy_file = szig.get_value('info.policy.file')
+                timestamp_szig = szig.get_value('info.policy.file_stamp')
+                timestamp_os = os.path.getmtime(policy_file)
+                status.reloaded = str(timestamp_szig) == str(timestamp_os).split('.')[0]
+            except IOError:
+                return CommandResultFailure(
+                        "Process %s: running, but error in socket communication" % instance.process_name)
 
         return status
 
