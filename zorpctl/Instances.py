@@ -208,9 +208,11 @@ class InstanceHandler(object):
         raise NotImplementedError()
 
     def statusAll(self):
+        result = []
         try:
             for instance in InstancesConf():
-                return self._callFunctionToInstanceProcesses(instance, self._process_status)
+                result += self._callFunctionToInstanceProcesses(instance, self._process_status)
+            return result
         except IOError as e:
             return CommandResultFailure(e.strerror)
 
@@ -237,7 +239,7 @@ class InstanceHandler(object):
     def stop(self, instance_name):
         inst_name, process_num = Instance.splitInstanceName(instance_name)
         if process_num != None:
-            result = self._stop_process(inst_name)
+            result = self._stop_process(Instance(name=inst_name, process_num=process_num))
         else:
             func1 = self._searchInstanceThanCallFunctionWithParamsToInstance
             func2 = self._callFunctionToInstanceProcesses
