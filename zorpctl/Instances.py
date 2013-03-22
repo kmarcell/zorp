@@ -17,14 +17,14 @@ class CommandResultSuccess(CommandResult):
     def __init__(self, msg = None):
         super(CommandResultSuccess, self).__init__(msg)
 
-    def __bool__(self):
+    def __nonzero__(self):
         return True
 
 class CommandResultFailure(CommandResult):
     def __init__(self, msg = None):
         super(CommandResultFailure, self).__init__(msg)
 
-    def __bool__(self):
+    def __nonzero__(self):
         return False
 
 class ProcessStatus(object):
