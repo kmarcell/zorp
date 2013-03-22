@@ -90,7 +90,7 @@ class InstanceHandler(object):
                 if instance.name == instance_name:
                     result = function(instance, *args)
                     break
-            return result if result else CommandResultFailure("instance %s not found!" % instance_name)
+            return result if result != None else CommandResultFailure("instance %s not found!" % instance_name)
         except IOError as e:
             return CommandResultFailure(e.strerror)
 
