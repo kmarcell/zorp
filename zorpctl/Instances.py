@@ -219,11 +219,13 @@ class InstanceHandler(object):
         raise NotImplementedError()
 
     def _stop_process(self, instance):
+        if not self.isRunning(instance.process_name):
+            return CommandResultFailure("Instance %s is not running" % instance.process_name)
         pid = self._getProcessPid(instance.process_name)
         sig = signal.SIGKILL if self.force else signal.SIGTERM
         os.kill(pid, sig)
         timeout = 1
-        while timeout < 5 and self.isRunning(instance.process_name):
+        while timeout <= 5 and self.isRunning(instance.process_name):
             time.sleep(1)
             timeout += 1
         if self.isRunning(instance.process_name):
@@ -236,8 +238,6 @@ class InstanceHandler(object):
     def stop(self, instance_name):
         inst_name, process_num = Instance.splitInstanceName(instance_name)
         if process_num != None:
-            if not self.isRunning(inst_name):
-                return CommandResultFailure("Instance %s is not running" % inst_name)
             result = self._stop_process(inst_name)
         else:
             func1 = self._searchInstanceThanCallFunctionWithParamsToInstance
