@@ -236,8 +236,9 @@ class InstanceHandler(object):
         raise NotImplementedError()
 
     def _stop_process(self, instance):
-        if not self.isRunning(instance.process_name):
-            return CommandResultFailure("Instance %s is not running" % instance.process_name)
+        running = self.isRunning(instance.process_name)
+        if not running:
+            return CommandResultFailure(running)
         pid = self._getProcessPid(instance.process_name)
         sig = signal.SIGKILL if self.force else signal.SIGTERM
         os.kill(pid, sig)
