@@ -119,7 +119,8 @@ class Zorpctl(object):
                 status = handler.detailedStatus(instance) if s_args.verbose else handler.status(instance)
                 UInterface.informUser(status)
         else:
-            handler.detailedStatusAll() if s_args.verbose else handler.statusAll()
+            status = handler.detailedStatusAll() if s_args.verbose else handler.statusAll()
+            UInterface.informUser(status)
 
     def authorize(self):
         raise NotImplementedError()
