@@ -210,8 +210,7 @@ class InstanceHandler(object):
     def statusAll(self):
         try:
             for instance in InstancesConf():
-                result = self._callFunctionToInstanceProcesses(instance, self._process_status)
-                UInterface.informUser(result)
+                return self._callFunctionToInstanceProcesses(instance, self._process_status)
         except IOError as e:
             return CommandResultFailure(e.strerror)
 
