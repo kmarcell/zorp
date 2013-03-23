@@ -90,12 +90,13 @@ class Zorpctl(object):
             if success:
                 UInterface.informUser(success)
             else:
-                result = Zorpctl.restart(str(success).split(':')[0])
+                handler.stop(success.value)
+                result = handler.start(success.value)
                 if result:
                     UInterface.informUser("%s: Restart successful" % result)
                 else:
-                    UInterface.informUser("Both reload and restart failed")
-                    UInterface.informUser(result)
+                    UInterface.informUser("Both reload (%s) and restart (%s) failed" %
+                                          (success, result))
 
     def stop_session(self):
         raise NotImplementedError()
