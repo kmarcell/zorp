@@ -1,5 +1,4 @@
 from InstancesConf import InstancesConf
-from Roles import InstanceRoleMaster, InstanceRoleSlave
 import os, signal, time, subprocess
 from szig import SZIG
 from InstanceClass import Instance
