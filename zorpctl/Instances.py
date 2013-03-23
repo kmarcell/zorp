@@ -18,7 +18,7 @@ class CommandResultSuccess(CommandResult):
         return True
 
 class CommandResultFailure(CommandResult):
-    def __init__(self, msg = None):
+    def __init__(self, msg = None, value = None):
         super(CommandResultFailure, self).__init__(msg)
 
     def __nonzero__(self):
@@ -109,7 +109,8 @@ class InstanceHandler(object):
 
     def _start_process(self, instance):
         if self.isRunning(instance.process_name):
-            return CommandResultFailure("Process %s: is already running" % instance.process_name)
+            return CommandResultFailure("Process %s: is already running" % instance.process_name,
+                                        instance.process_name)
         args = [self.install_path + "zorp", "--as"]
         args += instance.zorp_argv.split()
         args.append("--slave" if instance.process_num else "--master")
@@ -130,9 +131,9 @@ class InstanceHandler(object):
             return running
         else:
             return CommandResultFailure(
-                    "Zorp instance did not start in time" +
-                    "(instance='%s', timeout='%d')" %
-                    (instance.process_name, timeout))
+                    "%s: did not start in time (%s seconds)" %
+                    (instance.process_name, timeout),
+                    instance.process_name)
 
     def startAll(self):
         result = []
@@ -169,13 +170,15 @@ class InstanceHandler(object):
     def _reload_process(self, instance):
         running = self.isRunning(instance.process_name)
         if not running:
-            return CommandResultFailure("%s: %s" % (instance.process_name, running))
+            return CommandResultFailure("%s: %s" % (instance.process_name, running),
+                                        instance.process_name)
         szig = SZIG(self.pidfile_dir + 'zorpctl.' + instance.process_name)
         szig.reload()
         if szig.reload_result():
             result = CommandResultSuccess("%s: Reload successful" % instance.process_name)
         else:
-            result = CommandResultFailure("%s: Reload failed" % instance.process_name)
+            result = CommandResultFailure("%s: Reload failed" % instance.process_name,
+                                          instance.process_name)
         return result
 
     def reload(self, instance_name):
