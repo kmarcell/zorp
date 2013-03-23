@@ -9,6 +9,8 @@ import utils
 Questions:
 - Do we want the @file option for files containing instance name lists?
 - Is it a case when an instance does not have --num-of-processes?
+- Why does loglevel not raise?
+- how can i determine detailedStatus?
 """
 
 class Zorpctl(object):
