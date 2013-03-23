@@ -11,7 +11,8 @@ class CommandResult(object):
         return self.msg
 
 class CommandResultSuccess(CommandResult):
-    def __init__(self, msg = None):
+    def __init__(self, msg = None, value = None):
+        self.value = value
         super(CommandResultSuccess, self).__init__(msg)
 
     def __nonzero__(self):
@@ -19,6 +20,7 @@ class CommandResultSuccess(CommandResult):
 
 class CommandResultFailure(CommandResult):
     def __init__(self, msg = None, value = None):
+        self.value = value
         super(CommandResultFailure, self).__init__(msg)
 
     def __nonzero__(self):
@@ -240,7 +242,7 @@ class InstanceHandler(object):
     def _stop_process(self, instance):
         running = self.isRunning(instance.process_name)
         if not running:
-            return CommandResultFailure(running)
+            return CommandResultFailure(str(running), instance.process_name)
         pid = self._getProcessPid(instance.process_name)
         sig = signal.SIGKILL if self.force else signal.SIGTERM
         os.kill(pid, sig)
@@ -251,9 +253,10 @@ class InstanceHandler(object):
         if self.isRunning(instance.process_name):
             return CommandResultFailure("%s: did not exit in time" % instance.process_name +
                                         "(pid='%d', signo='%d', timeout='%d')" %
-                                         (pid, sig, timeout))
+                                         (pid, sig, timeout), instance.process_name)
         else:
-            return CommandResultSuccess("Instance %s stopped" % instance.process_name)
+            return CommandResultSuccess("%s: stopped" % instance.process_name,
+                                        instance.process_name)
 
     def stop(self, instance_name):
         inst_name, process_num = Instance.splitInstanceName(instance_name)
