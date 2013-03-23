@@ -2,6 +2,7 @@ import argparse
 from UInterface import UInterface
 from Instances import InstanceHandler
 from subprocess import call
+import utils
 
 #TODO: Logging
 """
@@ -44,7 +45,30 @@ class Zorpctl(object):
 
     @staticmethod
     def restart(params):
-        return "R"
+        """
+        Restarts Zorp instance(s) by instance name
+        expects sequence of name(s)
+        """
+        UInterface.informUser("Restarting Zorp Firewall Suite:")
+        handler = InstanceHandler()
+        if not params:
+            handler.stopAll()
+            status = handler.startAll()
+        else:
+            status = []
+            for instance in params:
+                handler.stop(instance)
+                result = handler.start(instance)
+                if utils.isSequence(result):
+                    status += result
+                else:
+                    status.append(result)
+
+        for success in status:
+            if success:
+                UInterface.informUser(success)
+            else:
+                UInterface.informUser("%s: Restart failed" % success.value)
 
     @staticmethod
     def reload(params):
