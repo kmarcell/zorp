@@ -141,7 +141,7 @@ class InstanceHandler(object):
         result = []
         try:
             for instance in InstancesConf():
-                result += self._callFunctionToInstanceProcesses(instance, self._start_process)
+                result += self.start(instance.name)
             return result
         except IOError as e:
             return CommandResultFailure(e.strerror)
@@ -164,7 +164,7 @@ class InstanceHandler(object):
         result = []
         try:
             for instance in InstancesConf():
-                result += self._callFunctionToInstanceProcesses(instance, self._reload_process)
+                result += self.reload(instance.name)
             return result
         except IOError as e:
             return CommandResultFailure(e.strerror)
@@ -231,7 +231,7 @@ class InstanceHandler(object):
         result = []
         try:
             for instance in InstancesConf():
-                result += self._callFunctionToInstanceProcesses(instance, self._process_status)
+                result += self.status(instance.name)
             return result
         except IOError as e:
             return CommandResultFailure(e.strerror)
@@ -273,7 +273,7 @@ class InstanceHandler(object):
         result = []
         try:
             for instance in InstancesConf():
-                result += self._callFunctionToInstanceProcesses(instance, self._stop_process)
+                result += self.stop(instance.name)
             return result
         except IOError as e:
             return CommandResultFailure(e.strerror)
