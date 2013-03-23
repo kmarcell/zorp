@@ -203,9 +203,9 @@ class InstanceHandler(object):
             try:
                 szig = SZIG(self.pidfile_dir + 'zorpctl.' + instance.process_name)
                 status.threads = int(szig.get_value('stats.threads_running'))
-                policy_file = szig.get_value('info.policy.file')
+                status.policy_file = szig.get_value('info.policy.file')
                 timestamp_szig = szig.get_value('info.policy.file_stamp')
-                timestamp_os = os.path.getmtime(policy_file)
+                timestamp_os = os.path.getmtime(status.policy_file)
                 status.reloaded = str(timestamp_szig) == str(timestamp_os).split('.')[0]
             except IOError:
                 return CommandResultFailure(
@@ -224,8 +224,19 @@ class InstanceHandler(object):
 
         return result
 
-    def detailedStatus(self, instance_name):
+    def _setDetailedStatus(self, status):
         raise NotImplementedError()
+
+    def detailedStatus(self, instance_name):
+        inst_name, process_num = Instance.splitInstanceName(instance_name)
+        if process_num != None:
+            result = self._setDetailedStatus(self.status(instance_name))
+        else:
+            result = []
+            for status in self.status(inst_name):
+                result.append(self._setDetailedStatus(status))
+
+        return result
 
     def statusAll(self):
         result = []
@@ -237,7 +248,13 @@ class InstanceHandler(object):
             return CommandResultFailure(e.strerror)
 
     def detailedStatusAll(self):
-        raise NotImplementedError()
+        result = []
+        try:
+            for instance in InstancesConf():
+                result += self.detailedStatus(instance.name)
+            return result
+        except IOError as e:
+            return CommandResultFailure(e.strerror)
 
     def _stop_process(self, instance):
         running = self.isRunning(instance.process_name)
