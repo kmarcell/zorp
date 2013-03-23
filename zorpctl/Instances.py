@@ -249,9 +249,9 @@ class InstanceHandler(object):
             time.sleep(1)
             timeout += 1
         if self.isRunning(instance.process_name):
-            return CommandResultFailure("Zorp instance did not exit in time" +
-                                        "(instance='%s', pid='%d', signo='%d', timeout='%d')" %
-                                        instance.process_name, pid, sig, timeout)
+            return CommandResultFailure("%s: did not exit in time" % instance.process_name +
+                                        "(pid='%d', signo='%d', timeout='%d')" %
+                                         (pid, sig, timeout))
         else:
             return CommandResultSuccess("Instance %s stopped" % instance.process_name)
 
