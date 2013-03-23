@@ -5,7 +5,7 @@ class Message(object):
         self.params = params
 
     def _strParams(self):
-        return utils.makeStringFromSequence(self.params) if utils.isSequence(self.params) else self.params
+        return " ".join(self.params) if utils.isSequence(self.params) else self.params
 
     def __str__(self):
         return "%s%s\n" % (self.command, " " + self._strParams() if self.params else "")
