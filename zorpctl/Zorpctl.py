@@ -51,24 +51,29 @@ class Zorpctl(object):
         """
         UInterface.informUser("Restarting Zorp Firewall Suite:")
         handler = InstanceHandler()
+        stopped_list = []
+        status = []
         if not params:
-            handler.stopAll()
-            status = handler.startAll()
+            stopped_list = handler.stopAll()
         else:
-            status = []
             for instance in params:
-                handler.stop(instance)
-                result = handler.start(instance)
-                if utils.isSequence(result):
-                    status += result
+                stop = handler.stop(instance)
+                if utils.isSequence(stop):
+                    stopped_list += stop
                 else:
-                    status.append(result)
+                    stopped_list.append(stop)
+
+        for stopped in stopped_list:
+            if stopped:
+                status.append(handler.start(stopped.value))
+            else:
+                status.append(stopped)
 
         for success in status:
             if success:
                 UInterface.informUser(success)
             else:
-                UInterface.informUser("%s: Restart failed" % success.value)
+                UInterface.informUser("%s: Restart failed because %s" % (success.value, success))
 
     @staticmethod
     def reload(params):
