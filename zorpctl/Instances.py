@@ -294,3 +294,85 @@ class InstanceHandler(object):
             return result
         except IOError as e:
             return CommandResultFailure(e.strerror)
+
+    def _modifyloglevel(self, process, value):
+        running = self.isRunning(process)
+        if not running:
+            return CommandResultFailure(str(running), process)
+        szig = SZIG(self.pidfile_dir + 'zorpctl.' + process)
+        szig.loglevel = szig.loglevel + value
+        return CommandResultSuccess(process)
+
+    def _raiseloglevel(self, instance):
+        return self._modifyloglevel(instance.process_name, 1)
+
+    def _lowerloglevel(self, instance):
+        return self._modifyloglevel(instance.process_name, -1)
+
+    def _getloglevel(self, instance):
+        running = self.isRunning(instance.process_name)
+        if not running:
+            return CommandResultFailure(str(running), instance.process_name)
+        szig = SZIG(self.pidfile_dir + 'zorpctl.' + instance.process_name)
+        return CommandResultSuccess("Instance: %s: verbose_level=%d, logspec='%s'" %
+                                    (instance.process_name, szig.loglevel, szig.logspec))
+
+    def inclog(self, instance_name):
+        inst_name, process_num = Instance.splitInstanceName(instance_name)
+        if process_num != None:
+            result = self._raiseloglevel(Instance(name=inst_name, process_num=process_num))
+        else:
+            func1 = self._searchInstanceThanCallFunctionWithParamsToInstance
+            func2 = self._callFunctionToInstanceProcesses
+            result = func1(inst_name, func2, [self._raiseloglevel])
+
+        return result
+
+    def inclogAll(self):
+        result = []
+        try:
+            for instance in InstancesConf():
+                result += self.inclog(instance.name)
+            return result
+        except IOError as e:
+            return CommandResultFailure(e.strerror)
+
+    def declog(self, instance_name):
+        inst_name, process_num = Instance.splitInstanceName(instance_name)
+        if process_num != None:
+            result = self._lowerloglevel(Instance(name=inst_name, process_num=process_num))
+        else:
+            func1 = self._searchInstanceThanCallFunctionWithParamsToInstance
+            func2 = self._callFunctionToInstanceProcesses
+            result = func1(inst_name, func2, [self._lowerloglevel])
+
+        return result
+
+    def declogAll(self):
+        result = []
+        try:
+            for instance in InstancesConf():
+                result += self.declog(instance.name)
+            return result
+        except IOError as e:
+            return CommandResultFailure(e.strerror)
+
+    def getlog(self, instance_name):
+        inst_name, process_num = Instance.splitInstanceName(instance_name)
+        if process_num != None:
+            result = self._getloglevel(Instance(name=inst_name, process_num=process_num))
+        else:
+            func1 = self._searchInstanceThanCallFunctionWithParamsToInstance
+            func2 = self._callFunctionToInstanceProcesses
+            result = func1(inst_name, func2, [self._getloglevel])
+
+        return result
+
+    def getlogAll(self):
+        result = []
+        try:
+            for instance in InstancesConf():
+                result += self.getlog(instance.name)
+            return result
+        except IOError as e:
+            return CommandResultFailure(e.strerror)

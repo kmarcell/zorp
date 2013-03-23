@@ -162,14 +162,42 @@ class Zorpctl(object):
     def version(params):
         call([InstanceHandler.install_path + 'zorp', "--version"])
 
-    def inclog(self):
-        raise NotImplementedError()
+    @staticmethod
+    def inclog(params):
+        """
+        Raises log level of Zorp instance(s) by instance name
+        expects sequence of name(s)
+        """
+        UInterface.informUser("Raising Zorp loglevel:")
+        handler = InstanceHandler()
+        if not params:
+            UInterface.informUser(handler.inclogAll())
+        else:
+            for instance in params:
+                UInterface.informUser(handler.inclog(instance))
 
-    def declog(self):
-        raise NotImplementedError()
+    @staticmethod
+    def declog(params):
+        """
+        Lowers log level of Zorp instance(s) by instance name
+        expects sequence of name(s)
+        """
+        UInterface.informUser("Raising Zorp loglevel:")
+        handler = InstanceHandler()
+        if not params:
+            UInterface.informUser(handler.declogAll())
+        else:
+            for instance in params:
+                UInterface.informUser(handler.declog(instance))
 
-    def log(self):
-        raise NotImplementedError()
+    @staticmethod
+    def log(params):
+        handler = InstanceHandler()
+        if not params:
+            UInterface.informUser(handler.getlogAll())
+        else:
+            for instance in params:
+                UInterface.informUser(handler.getlog(instance))
 
     def deadlockcheck(self):
         raise NotImplementedError()
