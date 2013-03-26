@@ -215,8 +215,25 @@ class Zorpctl(object):
             for instance in params:
                 UInterface.informUser(handler.getlog(instance))
 
-    def deadlockcheck(self):
-        raise NotImplementedError()
+    @staticmethod
+    def deadlockcheck(params):
+        d_parse = argparse.ArgumentParser(
+             prog='zorpctl deadlockcheck',
+             description="Change and query Zorp deadlock checking settings")
+        d_parse.add_argument('-d', '--disable', dest='value', action='store_false', default=None)
+        d_parse.add_argument('-e', '--enable', dest='value', action='store_true', default=None)
+        d_parse.add_argument('instance_list', nargs=argparse.REMAINDER)
+        d_args = d_parse.parse_args(params)
+
+        if d_args.value:
+            UInterface.informUser("Changing Zorp deadlock checking settings:")
+
+        handler = InstanceHandler()
+        if not d_args.instance_list:
+            UInterface.informUser(handler.deadlockcheckAll(d_args.value))
+        else:
+            for instance in d_args.instance_list:
+                UInterface.informUser(handler.deadlockcheck(instance, d_args.value))
 
     def szig(self):
         raise NotImplementedError()

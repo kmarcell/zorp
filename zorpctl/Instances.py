@@ -76,6 +76,9 @@ class InstanceHandler(object):
     def getlogAll(self):
         return self._callFunctionToAllInstances(self.getlog)
 
+    def deadlockcheckAll(self, value):
+        return self._callFunctionToAllInstances(self.deadlockcheck, value)
+
     def start(self, instance_name):
         inst_name, process_num = Instance.splitInstanceName(instance_name)
         instance = self._searchInstance(inst_name)
@@ -115,9 +118,16 @@ class InstanceHandler(object):
     def declog(self, instance_name):
         return self._callFuntionToProcessOrInstance(instance_name, self._lowerloglevel)
 
-
     def getlog(self, instance_name):
         return self._callFuntionToProcessOrInstance(instance_name, self._getloglevel)
+
+    def deadlockcheck(self, instance_name, value):
+        if value == None:
+            function = self._getDeadlockcheck
+        else:
+            function = self._enableDeadlockcheck if value else self._disableDeadlockcheck
+
+        return self._callFuntionToProcessOrInstance(instance_name, function)
 
     def _callFuntionToProcessOrInstance(self, instance_name, function):
         inst_name, process_num = Instance.splitInstanceName(instance_name)
@@ -294,11 +304,35 @@ class InstanceHandler(object):
             return CommandResultFailure("Process number %d must be between 0 and %d"
                                         % (process_num, instance.number_of_processes))
 
-    def _callFunctionToAllInstances(self, function):
+    def _callFunctionToAllInstances(self, function, args=None):
         result = []
         try:
             for instance in InstancesConf():
-                result += function(instance.name)
+                if args:
+                    result += function(instance.name, args)
+                else:
+                    result += function(instance.name)
             return result
         except IOError as e:
             return CommandResultFailure(e.strerror)
+
+    def _getDeadlockcheck(self, instance):
+        running = self.isRunning(instance.process_name)
+        if not running:
+            return CommandResultFailure(str(running), instance.process_name)
+        szig = SZIG(self.pidfile_dir + 'zorpctl.' + instance.process_name)
+        return "Instance: %s: deadlockcheck=%s" % (instance.process_name, szig.deadlockcheck)
+
+    def _setDeadlockcheck(self, instance, value):
+        running = self.isRunning(instance.process_name)
+        if not running:
+            return CommandResultFailure(str(running), instance.process_name)
+        szig = SZIG(self.pidfile_dir + 'zorpctl.' + instance.process_name)
+        szig.deadlockcheck = value
+        return CommandResultSuccess(instance.process_name)
+
+    def _enableDeadlockcheck(self, instance):
+        return self._setDeadlockcheck(instance, True)
+
+    def _disableDeadlockcheck(self, instance):
+        return self._setDeadlockcheck(instance, False)
