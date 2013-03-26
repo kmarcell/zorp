@@ -92,8 +92,22 @@ class Zorpctl(object):
             for instance in params:
                 UInterface.informUser(handler.reload(instance))
 
-    def force_start(self):
-        raise NotImplementedError()
+    @staticmethod
+    def force_start(params):
+        """
+        Starts Zorp instance(s) by instance name
+        even if no-auto-start is set
+        expects sequence of name(s)
+        """
+        UInterface.informUser("Starting Zorp Firewall Suite:")
+
+        handler = InstanceHandler()
+        handler.force = True
+        if not params:
+            UInterface.informUser(handler.startAll())
+        else:
+            for instance in params:
+                UInterface.informUser(handler.start(instance))
 
     def force_stop(self):
         raise NotImplementedError()
