@@ -52,66 +52,92 @@ class InstanceHandler(object):
         self.force = False
         #variable indicates if force is active by force commands
 
-    def _getProcessPid(self, process):
-        pid_file = open(self.pidfile_dir + 'zorp-' + process + '.pid')
-        pid = int(pid_file.read())
-        pid_file.close()
+    def startAll(self):
+        return self._callFunctionToAllInstances(self.start)
 
-        return pid
+    def stopAll(self):
+        return self._callFunctionToAllInstances(self.stop)
 
-    def isRunning(self, process):
-        """
-        Opening the right pidfile in the pidfile dir,
-        checking if there is a running process with that pid,
-        returning True if there is.
+    def reloadAll(self):
+        return self._callFunctionToAllInstances(self.reload)
 
-        FIXME: Delete pid file if there is no runnig processes with that pid
-        """
-        try:
-            pid = self._getProcessPid(process)
-        except IOError as e:
-            if e.strerror == "Permission denied":
-                return CommandResultFailure(e.strerror)
-            else:
-                return CommandResultFailure("Process %s: not running" % process)
+    def statusAll(self):
+        return self._callFunctionToAllInstances(self.status)
 
-        try:
-            open('/proc/' + str(pid) + '/status')
-        except IOError:
-            return CommandResultFailure("Invalid pid file no running process with pid %d!" % pid)
+    def detailedStatusAll(self):
+        return self._callFunctionToAllInstances(self.detailedStatus)
 
-        return CommandResultSuccess("Process %s: running" % process)
+    def inclogAll(self):
+        return self._callFunctionToAllInstances(self.inclog)
 
-    def _searchInstanceThanCallFunctionWithParamsToInstance(self, instance_name, function, args):
-        result = None
-        try:
-            for instance in InstancesConf():
-                if instance.name == instance_name:
-                    result = function(instance, *args)
-                    break
-            return result if result != None else CommandResultFailure("instance %s not found!" % instance_name)
-        except IOError as e:
-            return CommandResultFailure(e.strerror)
+    def declogAll(self):
+        return self._callFunctionToAllInstances(self.declog)
 
-    def _callFunctionToInstanceProcesses(self, instance, function):
-        result = []
-        for i in range(0, instance.number_of_processes):
-            instance.process_num = i
-            result.append(function(instance))
+    def getlogAll(self):
+        return self._callFunctionToAllInstances(self.getlog)
+
+    def start(self, instance_name):
+        inst_name, process_num = Instance.splitInstanceName(instance_name)
+        instance = self._searchInstance(inst_name)
+        if not instance:
+            return instance
+        if process_num != None:
+            #process_num can be zero which is not None but it is a False in statements
+            result = self._setProcessNumThanStart(instance, process_num)
+        else:
+            result = self._callFunctionToInstanceProcesses(instance, self._start_process)
 
         return result
 
-    def _setProcessNumThanStart(self, instance, process_num):
-        if process_num >= 0 and process_num < instance.number_of_processes:
-            instance.process_num = process_num
-            return self._start_process(instance)
+    def stop(self, instance_name):
+        return self._callFuntionToProcessOrInstance(instance_name, self._stop_process)
+
+    def reload(self, instance_name):
+        return self._callFuntionToProcessOrInstance(instance_name, self._reload_process)
+
+    def status(self, instance_name):
+        return self._callFuntionToProcessOrInstance(instance_name, self._process_status)
+
+    def detailedStatus(self, instance_name):
+        inst_name, process_num = Instance.splitInstanceName(instance_name)
+        if process_num != None:
+            result = self._setDetailedStatus(self.status(instance_name))
         else:
-            return CommandResultFailure("Process number %d must be between 0 and %d"
-                                        % (process_num, instance.number_of_processes))
+            result = []
+            for status in self.status(inst_name):
+                result.append(self._setDetailedStatus(status))
+
+        return result
+
+    def inclog(self, instance_name):
+        return self._callFuntionToProcessOrInstance(instance_name, self._raiseloglevel)
+
+    def declog(self, instance_name):
+        return self._callFuntionToProcessOrInstance(instance_name, self._lowerloglevel)
+
+
+    def getlog(self, instance_name):
+        return self._callFuntionToProcessOrInstance(instance_name, self._getloglevel)
+
+    def _callFuntionToProcessOrInstance(self, instance_name, function):
+        inst_name, process_num = Instance.splitInstanceName(instance_name)
+        if process_num != None:
+            #process_num can be zero which is not None but it is a False in statements
+            result = function(Instance(name=inst_name, process_num=process_num))
+        else:
+            instance = self._searchInstance(inst_name)
+            if not instance:
+                return CommandResultFailure("instance %s not found!" % instance_name)
+            result = self._callFunctionToInstanceProcesses(instance, function)
+
+        return result
 
     def _start_process(self, instance):
         if self.isRunning(instance.process_name):
             return CommandResultFailure("Process %s: is already running" % instance.process_name,
+                                        instance.process_name)
+        if not instance.auto_start and not self.force:
+            return CommandResultFailure("Process %s: has no-auto-start" % instance.process_name,
                                         instance.process_name)
         args = [self.install_path + "zorp", "--as"]
         args += instance.zorp_argv.split()
@@ -137,37 +163,24 @@ class InstanceHandler(object):
                     (instance.process_name, timeout),
                     instance.process_name)
 
-    def startAll(self):
-        result = []
-        try:
-            for instance in InstancesConf():
-                result += self.start(instance.name)
-            return result
-        except IOError as e:
-            return CommandResultFailure(e.strerror)
-
-    def start(self, instance_name):
-        inst_name, process_num = Instance.splitInstanceName(instance_name)
-        common_method = self._searchInstanceThanCallFunctionWithParamsToInstance
-        if process_num != None:
-            #process_num can be zero which is not None but it is a False in statements
-            function =  self._setProcessNumThanStart
-            args = [process_num]
+    def _stop_process(self, instance):
+        running = self.isRunning(instance.process_name)
+        if not running:
+            return CommandResultFailure(str(running), instance.process_name)
+        pid = self._getProcessPid(instance.process_name)
+        sig = signal.SIGKILL if self.force else signal.SIGTERM
+        os.kill(pid, sig)
+        timeout = 1
+        while timeout <= 5 and self.isRunning(instance.process_name):
+            time.sleep(1)
+            timeout += 1
+        if self.isRunning(instance.process_name):
+            return CommandResultFailure("%s: did not exit in time" % instance.process_name +
+                                        "(pid='%d', signo='%d', timeout='%d')" %
+                                         (pid, sig, timeout), instance.process_name)
         else:
-            function = self._callFunctionToInstanceProcesses
-            args = [self._start_process]
-
-        result = common_method(inst_name, function, args)
-        return result
-
-    def reloadAll(self):
-        result = []
-        try:
-            for instance in InstancesConf():
-                result += self.reload(instance.name)
-            return result
-        except IOError as e:
-            return CommandResultFailure(e.strerror)
+            return CommandResultSuccess("%s: stopped" % instance.process_name,
+                                        instance.process_name)
 
     def _reload_process(self, instance):
         running = self.isRunning(instance.process_name)
@@ -181,18 +194,6 @@ class InstanceHandler(object):
         else:
             result = CommandResultFailure("%s: Reload failed" % instance.process_name,
                                           instance.process_name)
-        return result
-
-    def reload(self, instance_name):
-        inst_name, process_num = Instance.splitInstanceName(instance_name)
-        if process_num != None:
-            instance = Instance(name=inst_name, process_num=process_num)
-            result = self._reload_process(instance)
-        else:
-            func1 = self._searchInstanceThanCallFunctionWithParamsToInstance
-            func2 = self._callFunctionToInstanceProcesses
-            result = func1(inst_name, func2, [self._reload_process])
-
         return result
 
     def _process_status(self, instance):
@@ -213,87 +214,38 @@ class InstanceHandler(object):
 
         return status
 
-    def status(self, instance_name):
-        inst_name, process_num = Instance.splitInstanceName(instance_name)
-        if process_num != None:
-            result = self._process_status(Instance(name=inst_name, process_num=process_num))
-        else:
-            func1 = self._searchInstanceThanCallFunctionWithParamsToInstance
-            func2 = self._callFunctionToInstanceProcesses
-            result = func1(inst_name, func2, [self._process_status])
+    def isRunning(self, process):
+        """
+        Opening the right pidfile in the pidfile dir,
+        checking if there is a running process with that pid,
+        returning True if there is.
 
-        return result
+        FIXME: Delete pid file if there is no runnig processes with that pid
+        """
+        try:
+            pid = self._getProcessPid(process)
+        except IOError as e:
+            if e.strerror == "Permission denied":
+                return CommandResultFailure(e.strerror)
+            else:
+                return CommandResultFailure("Process %s: not running" % process)
+
+        try:
+            open('/proc/' + str(pid) + '/status')
+        except IOError:
+            return CommandResultFailure("Invalid pid file no running process with pid %d!" % pid)
+
+        return CommandResultSuccess("Process %s: running" % process)
+
+    def _getProcessPid(self, process):
+        pid_file = open(self.pidfile_dir + 'zorp-' + process + '.pid')
+        pid = int(pid_file.read())
+        pid_file.close()
+
+        return pid
 
     def _setDetailedStatus(self, status):
         raise NotImplementedError()
-
-    def detailedStatus(self, instance_name):
-        inst_name, process_num = Instance.splitInstanceName(instance_name)
-        if process_num != None:
-            result = self._setDetailedStatus(self.status(instance_name))
-        else:
-            result = []
-            for status in self.status(inst_name):
-                result.append(self._setDetailedStatus(status))
-
-        return result
-
-    def statusAll(self):
-        result = []
-        try:
-            for instance in InstancesConf():
-                result += self.status(instance.name)
-            return result
-        except IOError as e:
-            return CommandResultFailure(e.strerror)
-
-    def detailedStatusAll(self):
-        result = []
-        try:
-            for instance in InstancesConf():
-                result += self.detailedStatus(instance.name)
-            return result
-        except IOError as e:
-            return CommandResultFailure(e.strerror)
-
-    def _stop_process(self, instance):
-        running = self.isRunning(instance.process_name)
-        if not running:
-            return CommandResultFailure(str(running), instance.process_name)
-        pid = self._getProcessPid(instance.process_name)
-        sig = signal.SIGKILL if self.force else signal.SIGTERM
-        os.kill(pid, sig)
-        timeout = 1
-        while timeout <= 5 and self.isRunning(instance.process_name):
-            time.sleep(1)
-            timeout += 1
-        if self.isRunning(instance.process_name):
-            return CommandResultFailure("%s: did not exit in time" % instance.process_name +
-                                        "(pid='%d', signo='%d', timeout='%d')" %
-                                         (pid, sig, timeout), instance.process_name)
-        else:
-            return CommandResultSuccess("%s: stopped" % instance.process_name,
-                                        instance.process_name)
-
-    def stop(self, instance_name):
-        inst_name, process_num = Instance.splitInstanceName(instance_name)
-        if process_num != None:
-            result = self._stop_process(Instance(name=inst_name, process_num=process_num))
-        else:
-            func1 = self._searchInstanceThanCallFunctionWithParamsToInstance
-            func2 = self._callFunctionToInstanceProcesses
-            result = func1(inst_name, func2, [self._stop_process])
-
-        return result
-
-    def stopAll(self):
-        result = []
-        try:
-            for instance in InstancesConf():
-                result += self.stop(instance.name)
-            return result
-        except IOError as e:
-            return CommandResultFailure(e.strerror)
 
     def _modifyloglevel(self, process, value):
         running = self.isRunning(process)
@@ -317,62 +269,36 @@ class InstanceHandler(object):
         return CommandResultSuccess("Instance: %s: verbose_level=%d, logspec='%s'" %
                                     (instance.process_name, szig.loglevel, szig.logspec))
 
-    def inclog(self, instance_name):
-        inst_name, process_num = Instance.splitInstanceName(instance_name)
-        if process_num != None:
-            result = self._raiseloglevel(Instance(name=inst_name, process_num=process_num))
-        else:
-            func1 = self._searchInstanceThanCallFunctionWithParamsToInstance
-            func2 = self._callFunctionToInstanceProcesses
-            result = func1(inst_name, func2, [self._raiseloglevel])
-
-        return result
-
-    def inclogAll(self):
-        result = []
+    def _searchInstance(self, instance_name):
         try:
             for instance in InstancesConf():
-                result += self.inclog(instance.name)
-            return result
+                if instance.name == instance_name:
+                    return instance
+            return None
         except IOError as e:
             return CommandResultFailure(e.strerror)
 
-    def declog(self, instance_name):
-        inst_name, process_num = Instance.splitInstanceName(instance_name)
-        if process_num != None:
-            result = self._lowerloglevel(Instance(name=inst_name, process_num=process_num))
-        else:
-            func1 = self._searchInstanceThanCallFunctionWithParamsToInstance
-            func2 = self._callFunctionToInstanceProcesses
-            result = func1(inst_name, func2, [self._lowerloglevel])
+    def _callFunctionToInstanceProcesses(self, instance, function):
+        result = []
+        for i in range(0, instance.number_of_processes):
+            instance.process_num = i
+            result.append(function(instance))
 
         return result
 
-    def declogAll(self):
-        result = []
-        try:
-            for instance in InstancesConf():
-                result += self.declog(instance.name)
-            return result
-        except IOError as e:
-            return CommandResultFailure(e.strerror)
-
-    def getlog(self, instance_name):
-        inst_name, process_num = Instance.splitInstanceName(instance_name)
-        if process_num != None:
-            result = self._getloglevel(Instance(name=inst_name, process_num=process_num))
+    def _setProcessNumThanStart(self, instance, process_num):
+        if process_num >= 0 and process_num < instance.number_of_processes:
+            instance.process_num = process_num
+            return self._start_process(instance)
         else:
-            func1 = self._searchInstanceThanCallFunctionWithParamsToInstance
-            func2 = self._callFunctionToInstanceProcesses
-            result = func1(inst_name, func2, [self._getloglevel])
+            return CommandResultFailure("Process number %d must be between 0 and %d"
+                                        % (process_num, instance.number_of_processes))
 
-        return result
-
-    def getlogAll(self):
+    def _callFunctionToAllInstances(self, function):
         result = []
         try:
             for instance in InstancesConf():
-                result += self.getlog(instance.name)
+                result += function(instance.name)
             return result
         except IOError as e:
             return CommandResultFailure(e.strerror)
