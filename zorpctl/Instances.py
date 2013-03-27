@@ -50,6 +50,7 @@ class InstanceHandler(object):
 
     def __init__(self):
         self.force = False
+        self.start_stop_timout = 5
         #variable indicates if force is active by force commands
 
     def startAll(self):
@@ -86,7 +87,7 @@ class InstanceHandler(object):
             return instance
         if process_num != None:
             #process_num can be zero which is not None but it is a False in statements
-            result = self._setProcessNumThanStart(instance, process_num)
+            result = self._start_process(instance)
         else:
             result = self._callFunctionToInstanceProcesses(instance, self._start_process)
 
@@ -102,15 +103,7 @@ class InstanceHandler(object):
         return self._callFuntionToProcessOrInstance(instance_name, self._process_status)
 
     def detailedStatus(self, instance_name):
-        inst_name, process_num = Instance.splitInstanceName(instance_name)
-        if process_num != None:
-            result = self._setDetailedStatus(self.status(instance_name))
-        else:
-            result = []
-            for status in self.status(inst_name):
-                result.append(self._setDetailedStatus(status))
-
-        return result
+        return self._callFuntionToProcessOrInstance(instance_name, self._getDetailedStatus)
 
     def inclog(self, instance_name):
         return self._callFuntionToProcessOrInstance(instance_name, self._raiseloglevel)
@@ -130,7 +123,10 @@ class InstanceHandler(object):
         return self._callFuntionToProcessOrInstance(instance_name, function)
 
     def _callFuntionToProcessOrInstance(self, instance_name, function):
-        inst_name, process_num = Instance.splitInstanceName(instance_name)
+        try:
+            inst_name, process_num = Instance.splitInstanceName(instance_name)
+        except ValueError:
+            return CommandResultFailure("%s: Can not recognize process number as a number" % instance_name)
         if process_num != None:
             #process_num can be zero which is not None but it is a False in statements
             result = function(Instance(name=inst_name, process_num=process_num))
@@ -142,36 +138,57 @@ class InstanceHandler(object):
 
         return result
 
-    def _start_process(self, instance):
+    def _isValidInstanceForStart(self, instance):
         if self.isRunning(instance.process_name):
             return CommandResultFailure("Process %s: is already running" % instance.process_name,
                                         instance.process_name)
         if not instance.auto_start and not self.force:
             return CommandResultFailure("Process %s: has no-auto-start" % instance.process_name,
                                         instance.process_name)
-        args = [self.install_path + "zorp", "--as"]
-        args += instance.zorp_argv.split()
-        args.append("--slave" if instance.process_num else "--master")
-        args.append(instance.process_name)
+        if not 0 <= instance.process_num < instance.number_of_processes:
+            return CommandResultFailure("Process number %d must be between 0 and %d"
+                                        % (instance.process_num, instance.number_of_processes))
+        return CommandResultSuccess()
+
+
+    def _assembleStartCommand(self, instance):
+        command = [self.install_path + "zorp", "--as"]
+        command += instance.zorp_argv.split()
+        command.append("--slave" if instance.process_num else "--master")
+        command.append(instance.process_name)
         if instance.enable_core:
-            args.append("--enable-core")
+            command.append("--enable-core")
         if instance.auto_restart:
-            args += ["--process-mode" ,"background"]
+            command += ["--process-mode", "background"]
+        return command
+
+
+    def _waitTilTimoutToStart(self, process_name, timeout):
+        t = 1
+        while t <= timeout and not self.isRunning(process_name):
+            time.sleep(1)
+            t += 1
+
+    def _start_process(self, instance):
+        valid = self._isValidInstanceForStart(instance)
+        if not valid:
+            return valid
+        args = self._assembleStartCommand(instance)
 
         subprocess.Popen(args, stderr=open("/dev/null", 'w'))
-        timeout = 1
-        while timeout <= 5 and not self.isRunning(instance.process_name):
-            time.sleep(1)
-            timeout += 1
+        self._waitTilTimoutToStart(instance.process_name, self.start_stop_timout)
 
         running = self.isRunning(instance.process_name)
-        if running:
-            return running
-        else:
-            return CommandResultFailure(
-                    "%s: did not start in time (%s seconds)" %
-                    (instance.process_name, timeout),
-                    instance.process_name)
+        return running if running else CommandResultFailure(
+                                        "%s: did not start in time" % instance.process_name,
+                                        instance.process_name)
+
+
+    def _waitTilTimeoutToStop(self, process_name, timeout):
+        t = 1
+        while t <= timeout and self.isRunning(process_name):
+            time.sleep(1)
+            t += 1
 
     def _stop_process(self, instance):
         running = self.isRunning(instance.process_name)
@@ -180,14 +197,12 @@ class InstanceHandler(object):
         pid = self._getProcessPid(instance.process_name)
         sig = signal.SIGKILL if self.force else signal.SIGTERM
         os.kill(pid, sig)
-        timeout = 1
-        while timeout <= 5 and self.isRunning(instance.process_name):
-            time.sleep(1)
-            timeout += 1
+        self._waitTilTimeoutToStop(instance.process_name, self.start_stop_timout)
         if self.isRunning(instance.process_name):
             return CommandResultFailure("%s: did not exit in time" % instance.process_name +
                                         "(pid='%d', signo='%d', timeout='%d')" %
-                                         (pid, sig, timeout), instance.process_name)
+                                         (pid, sig, self.start_stop_timout),
+                                         instance.process_name)
         else:
             return CommandResultSuccess("%s: stopped" % instance.process_name,
                                         instance.process_name)
@@ -254,7 +269,7 @@ class InstanceHandler(object):
 
         return pid
 
-    def _setDetailedStatus(self, status):
+    def _getDetailedStatus(self, status):
         raise NotImplementedError()
 
     def _modifyloglevel(self, process, value):
@@ -295,14 +310,6 @@ class InstanceHandler(object):
             result.append(function(instance))
 
         return result
-
-    def _setProcessNumThanStart(self, instance, process_num):
-        if process_num >= 0 and process_num < instance.number_of_processes:
-            instance.process_num = process_num
-            return self._start_process(instance)
-        else:
-            return CommandResultFailure("Process number %d must be between 0 and %d"
-                                        % (process_num, instance.number_of_processes))
 
     def _callFunctionToAllInstances(self, function, args=None):
         result = []
