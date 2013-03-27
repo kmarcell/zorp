@@ -9,7 +9,6 @@ class Instance(object):
         self.auto_start = kwargs.pop('auto_start', True)
         self.number_of_processes = kwargs.pop('number_of_processes', 1)
         self.enable_core = kwargs.pop('enable_core', False)
-        self.role = kwargs.pop('role', None)
 
     @staticmethod
     def splitInstanceName(instance_name):
