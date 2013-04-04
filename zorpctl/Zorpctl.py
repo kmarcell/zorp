@@ -1,8 +1,12 @@
 import argparse
-from UInterface import UInterface
-from Instances import InstanceHandler
-from subprocess import call
+import subprocess
 import utils
+from UInterface import UInterface
+from Instances import ZorpHandler, InstanceHandler
+from InstanceClass import Instance
+from ProcessAlgorithms import (StartAlgorithm, StopAlgorithm,
+                                LogLevelAlgorithm , DeadlockCheckAlgorithm,
+                                StatusAlgorithm, ReloadAlgorithm)
 
 #TODO: Logging
 """
@@ -16,66 +20,86 @@ Questions:
 class Zorpctl(object):
 
     @staticmethod
-    def start(params):
+    def runAlgorithmOnProcessOrInstance(instance_name, algorithm):
+        try:
+            name, number = Instance.splitInstanceName(instance_name)
+        except ValueError:
+            return "Instance: %s NOT RECOGNIZED!" % instance_name
+        instance = InstanceHandler.searchInstance(name)
+        if not instance:
+            return instance
+        if number != None:
+            #number can be 0 which is false too
+            instance.process_num = number
+            algorithm.setInstance(instance)
+            return algorithm.run()
+        else:
+            return InstanceHandler.executeAlgorithmOnInstanceProcesses(instance, algorithm)
+
+    @staticmethod
+    def start(listofinstances):
         """
         Starts Zorp instance(s) by instance name
         expects sequence of name(s)
         """
         UInterface.informUser("Starting Zorp Firewall Suite:")
 
-        handler = InstanceHandler()
-        if not params:
-            UInterface.informUser(handler.startAll())
+        if not listofinstances:
+            UInterface.informUser(ZorpHandler.start())
         else:
-            for instance in params:
-                UInterface.informUser(handler.start(instance))
+            algorithm = StartAlgorithm()
+            for instance in listofinstances:
+                result = Zorpctl.runAlgorithmOnProcessOrInstance(instance, algorithm)
+                UInterface.informUser(result)
 
     @staticmethod
-    def stop(params):
+    def stop(listofinstances):
         """
         Stops Zorp instance(s) by instance name
         expects sequence of name(s)
         """
         UInterface.informUser("Stopping Zorp Firewall Suite:")
-
-        handler = InstanceHandler()
-        if not params:
-            UInterface.informUser(handler.stopAll())
+        if not listofinstances:
+            UInterface.informUser(ZorpHandler.stop())
         else:
-            for instance in params:
-                UInterface.informUser(handler.stop(instance))
+            for instance in listofinstances:
+                algorithm = StopAlgorithm()
+                result = Zorpctl.runAlgorithmOnProcessOrInstance(instance, algorithm)
+                UInterface.informUser(result)
 
     @staticmethod
-    def restart(params):
+    def restart(listofinstances):
         """
         Restarts Zorp instance(s) by instance name
         expects sequence of name(s)
         """
         UInterface.informUser("Restarting Zorp Firewall Suite:")
-        handler = InstanceHandler()
         stopped_list = []
         status = []
-        if not params:
-            stopped_list = handler.stopAll()
+        if not listofinstances:
+            stopped_list = ZorpHandler.stop()
         else:
-            for instance in params:
-                stop = handler.stop(instance)
+            for instance in listofinstances:
+                stop = Zorpctl.runAlgorithmOnProcessOrInstance(instance, StopAlgorithm())
                 if utils.isSequence(stop):
                     stopped_list += stop
                 else:
                     stopped_list.append(stop)
 
         for stopped in stopped_list:
+            UInterface.informUser(stopped)
             if stopped:
-                status.append(handler.start(stopped.value))
-            else:
-                status.append(stopped)
+                algorithm = StartAlgorithm()
+                algorithm.setInstance(stopped.instance)
+                status.append(algorithm.run())
 
         for success in status:
             if success:
                 UInterface.informUser(success)
             else:
-                UInterface.informUser("%s: Restart failed because %s" % (success.value, success))
+                UInterface.informUser("Restart failed: %s" % success)
+
+        return status
 
     @staticmethod
     def reload(params):
@@ -85,13 +109,6 @@ class Zorpctl(object):
         """
         UInterface.informUser("Reloading Zorp Firewall Suite:")
 
-        handler = InstanceHandler()
-        if not params:
-            UInterface.informUser(handler.reloadAll())
-        else:
-            for instance in params:
-                UInterface.informUser(handler.reload(instance))
-
     @staticmethod
     def force_start(params):
         """
@@ -100,14 +117,6 @@ class Zorpctl(object):
         expects sequence of name(s)
         """
         UInterface.informUser("Starting Zorp Firewall Suite:")
-
-        handler = InstanceHandler()
-        handler.force = True
-        if not params:
-            UInterface.informUser(handler.startAll())
-        else:
-            for instance in params:
-                UInterface.informUser(handler.start(instance))
 
     def force_stop(self):
         raise NotImplementedError()
@@ -121,6 +130,7 @@ class Zorpctl(object):
         Tries to reload Zorp instance(s) by instance name
         if not succeeded than tries to restart instance(s)
         expects sequence of name(s)
+        """
         """
         UInterface.informUser("Reloading or Restarting Zorp Firewall Suite:")
         handler = InstanceHandler()
@@ -142,6 +152,7 @@ class Zorpctl(object):
                 else:
                     UInterface.informUser("Both reload (%s) and restart (%s) failed" %
                                           (success, result))
+        """
 
     def stop_session(self):
         raise NotImplementedError()
@@ -151,22 +162,26 @@ class Zorpctl(object):
 
     @staticmethod
     def status(params):
+        """
+        Displays status of Zorp instance(s) by instance name
+        expects sequence of name(s)
+        can display more detailed status with -v or --verbose option
+        """
         s_parse = argparse.ArgumentParser(
              prog='zorpctl status',
              description="Displays status of the specified Zorp instance(s)." +
                   "For additional information use status -v or --verbose option")
         s_parse.add_argument('-v', '--verbose', action='store_true')
-        s_parse.add_argument('params', nargs='*')
+        s_parse.add_argument('listofinstances', nargs='*')
         s_args = s_parse.parse_args(params)
 
-        handler = InstanceHandler()
-        if s_args.params:
-            for instance in s_args.params:
-                status = handler.detailedStatus(instance) if s_args.verbose else handler.status(instance)
-                UInterface.informUser(status)
+        if not s_args.listofinstances:
+            UInterface.informUser(ZorpHandler.detailedStatus() if s_args.verbose else ZorpHandler.status())
         else:
-            status = handler.detailedStatusAll() if s_args.verbose else handler.statusAll()
-            UInterface.informUser(status)
+            for instance in s_args.listofinstances:
+                algorithm = StatusAlgorithm(StatusAlgorithm.DETAILED) if s_args.verbose else StatusAlgorithm()
+                result = Zorpctl.runAlgorithmOnProcessOrInstance(instance, algorithm)
+                UInterface.informUser(result)
 
     def authorize(self):
         raise NotImplementedError()
@@ -176,7 +191,7 @@ class Zorpctl(object):
 
     @staticmethod
     def version(params):
-        call([InstanceHandler.install_path + 'zorp', "--version"])
+        subprocess.call(['/usr/lib/zorp/zorp', "--version"])
 
     @staticmethod
     def inclog(params):
@@ -185,12 +200,6 @@ class Zorpctl(object):
         expects sequence of name(s)
         """
         UInterface.informUser("Raising Zorp loglevel:")
-        handler = InstanceHandler()
-        if not params:
-            UInterface.informUser(handler.inclogAll())
-        else:
-            for instance in params:
-                UInterface.informUser(handler.inclog(instance))
 
     @staticmethod
     def declog(params):
@@ -199,21 +208,10 @@ class Zorpctl(object):
         expects sequence of name(s)
         """
         UInterface.informUser("Raising Zorp loglevel:")
-        handler = InstanceHandler()
-        if not params:
-            UInterface.informUser(handler.declogAll())
-        else:
-            for instance in params:
-                UInterface.informUser(handler.declog(instance))
 
     @staticmethod
     def log(params):
-        handler = InstanceHandler()
-        if not params:
-            UInterface.informUser(handler.getlogAll())
-        else:
-            for instance in params:
-                UInterface.informUser(handler.getlog(instance))
+        pass
 
     @staticmethod
     def deadlockcheck(params):
@@ -227,13 +225,6 @@ class Zorpctl(object):
 
         if d_args.value:
             UInterface.informUser("Changing Zorp deadlock checking settings:")
-
-        handler = InstanceHandler()
-        if not d_args.instance_list:
-            UInterface.informUser(handler.deadlockcheckAll(d_args.value))
-        else:
-            for instance in d_args.instance_list:
-                UInterface.informUser(handler.deadlockcheck(instance, d_args.value))
 
     def szig(self):
         raise NotImplementedError()
