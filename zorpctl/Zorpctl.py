@@ -55,9 +55,7 @@ class Zorpctl(object):
             UInterface.informUser(ZorpHandler.start())
         else:
             algorithm = StartAlgorithm()
-            for instance in listofinstances:
-                result = Zorpctl.runAlgorithmOnProcessOrInstance(instance, algorithm)
-                UInterface.informUser(result)
+            Zorpctl.runAlgorithmOnList(listofinstances, algorithm)
 
     @staticmethod
     def stop(listofinstances):
@@ -66,13 +64,12 @@ class Zorpctl(object):
         expects sequence of name(s)
         """
         UInterface.informUser("Stopping Zorp Firewall Suite:")
+
         if not listofinstances:
             UInterface.informUser(ZorpHandler.stop())
         else:
-            for instance in listofinstances:
-                algorithm = StopAlgorithm()
-                result = Zorpctl.runAlgorithmOnProcessOrInstance(instance, algorithm)
-                UInterface.informUser(result)
+            algorithm = StopAlgorithm()
+            Zorpctl.runAlgorithmOnList(listofinstances, algorithm)
 
     @staticmethod
     def restart(listofinstances):
@@ -81,40 +78,22 @@ class Zorpctl(object):
         expects sequence of name(s)
         """
         UInterface.informUser("Restarting Zorp Firewall Suite:")
-        stopped_list = []
-        status = []
-        if not listofinstances:
-            stopped_list = ZorpHandler.stop()
-        else:
-            for instance in listofinstances:
-                stop = Zorpctl.runAlgorithmOnProcessOrInstance(instance, StopAlgorithm())
-                if utils.isSequence(stop):
-                    stopped_list += stop
-                else:
-                    stopped_list.append(stop)
-
-        for stopped in stopped_list:
-            UInterface.informUser(stopped)
-            if stopped:
-                algorithm = StartAlgorithm()
-                algorithm.setInstance(stopped.instance)
-                status.append(algorithm.run())
-
-        for success in status:
-            if success:
-                UInterface.informUser(success)
-            else:
-                UInterface.informUser("Restart failed: %s" % success)
-
-        return status
+        Zorpctl.stop(listofinstances)
+        Zorpctl.start(listofinstances)
 
     @staticmethod
-    def reload(params):
+    def reload(listofinstances):
         """
         Reloads Zorp instance(s) by instance name
         expects sequence of name(s)
         """
         UInterface.informUser("Reloading Zorp Firewall Suite:")
+
+        if not listofinstances:
+            UInterface.informUser(ZorpHandler.reload())
+        else:
+            algorithm = ReloadAlgorithm()
+            Zorpctl.runAlgorithmOnList(listofinstances, algorithm)
 
     @staticmethod
     def force_start(params):
@@ -196,10 +175,8 @@ class Zorpctl(object):
         if not s_args.listofinstances:
             UInterface.informUser(ZorpHandler.detailedStatus() if s_args.verbose else ZorpHandler.status())
         else:
-            for instance in s_args.listofinstances:
-                algorithm = StatusAlgorithm(StatusAlgorithm.DETAILED) if s_args.verbose else StatusAlgorithm()
-                result = Zorpctl.runAlgorithmOnProcessOrInstance(instance, algorithm)
-                UInterface.informUser(result)
+            algorithm = StatusAlgorithm(StatusAlgorithm.DETAILED) if s_args.verbose else StatusAlgorithm()
+            Zorpctl.runAlgorithmOnList(s_args.listofinstances, algorithm)
 
     def authorize(self):
         raise NotImplementedError()
