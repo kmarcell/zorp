@@ -191,24 +191,45 @@ class Zorpctl(object):
         subprocess.call(['/usr/lib/zorp/zorp', "--version"])
 
     @staticmethod
-    def inclog(params):
+    def inclog(listofinstances):
         """
         Raises log level of Zorp instance(s) by instance name
         expects sequence of name(s)
         """
         UInterface.informUser("Raising Zorp loglevel:")
 
+        if not listofinstances:
+            UInterface.informUser(ZorpHandler.inclog())
+        else:
+            algorithm = LogLevelAlgorithm(LogLevelAlgorithm.INCREMENT)
+            Zorpctl.runAlgorithmOnList(listofinstances, algorithm)
+
     @staticmethod
-    def declog(params):
+    def declog(listofinstances):
         """
         Lowers log level of Zorp instance(s) by instance name
         expects sequence of name(s)
         """
-        UInterface.informUser("Raising Zorp loglevel:")
+        UInterface.informUser("Decreasing Zorp loglevel:")
+
+        if not listofinstances:
+            UInterface.informUser(ZorpHandler.declog())
+        else:
+            algorithm = LogLevelAlgorithm(LogLevelAlgorithm.DECREASE)
+            Zorpctl.runAlgorithmOnList(listofinstances, algorithm)
 
     @staticmethod
-    def log(params):
-        pass
+    def log(listofinstances):
+        """
+        Displays log level of Zorp instance(s) by instance name
+        expects sequence of name(s)
+        """
+
+        if not listofinstances:
+            UInterface.informUser(ZorpHandler.getlog())
+        else:
+            algorithm = LogLevelAlgorithm()
+            Zorpctl.runAlgorithmOnList(listofinstances, algorithm)
 
     @staticmethod
     def deadlockcheck(params):
