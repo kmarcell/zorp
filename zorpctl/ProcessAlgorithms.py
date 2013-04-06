@@ -1,5 +1,5 @@
 import os, signal, time, subprocess
-from szig import SZIG
+from szig import SZIG, SZIGError
 from CommandResults import CommandResultSuccess, CommandResultFailure
 
 class ProcessStatus(object):
@@ -143,7 +143,6 @@ class StopAlgorithm(ProcessAlgorithm):
                                         (self.instance.process_name, pid, sig, self.stop_timout))
         else:
             result = CommandResultSuccess("%s: stopped" % self.instance.process_name)
-            result.instance = self.instance
             return result
 
     def execute(self):
@@ -270,3 +269,16 @@ class StatusAlgorithm(ProcessAlgorithm):
             return self.detailedStatus()
         else:
             return self.status()
+
+class CoredumpAlgorithm(ProcessAlgorithm):
+
+    def coredump(self):
+        szig = SZIG(self.instance.process_name)
+        try:
+            szig.coredump()
+        except SZIGError as e:
+            return CommandResultFailure(e.msg)
+        return CommandResultSuccess("Instance:%s dumped core")
+
+    def execute(self):
+        return self.coredump()

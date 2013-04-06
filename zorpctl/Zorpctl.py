@@ -6,7 +6,8 @@ from Instances import ZorpHandler, InstanceHandler
 from InstanceClass import Instance
 from ProcessAlgorithms import (StartAlgorithm, StopAlgorithm,
                                 LogLevelAlgorithm , DeadlockCheckAlgorithm,
-                                StatusAlgorithm, ReloadAlgorithm)
+                                StatusAlgorithm, ReloadAlgorithm,
+                                CoredumpAlgorithm)
 
 #TODO: Logging
 """
@@ -35,6 +36,12 @@ class Zorpctl(object):
             return algorithm.run()
         else:
             return InstanceHandler.executeAlgorithmOnInstanceProcesses(instance, algorithm)
+
+    @staticmethod
+    def runAlgorithmOnList(listofinstances, algorithm):
+        for instance in listofinstances:
+            result = Zorpctl.runAlgorithmOnProcessOrInstance(instance, algorithm)
+            UInterface.informUser(result)
 
     @staticmethod
     def start(listofinstances):
@@ -157,8 +164,19 @@ class Zorpctl(object):
     def stop_session(self):
         raise NotImplementedError()
 
-    def coredump(self):
-        raise NotImplementedError()
+    @staticmethod
+    def coredump(listofinstances):
+        """
+        Instructs Zorp instance(s) to dump core by instance_name
+        expects sequence of name(s)
+        """
+
+        UInterface.informUser("Creating Zorp core dumps:")
+        if not listofinstances:
+            UInterface.informUser(ZorpHandler.coredump())
+        else:
+            algorithm = CoredumpAlgorithm()
+            Zorpctl.runAlgorithmOnList(listofinstances, algorithm)
 
     @staticmethod
     def status(params):

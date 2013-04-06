@@ -1,7 +1,7 @@
 from InstancesConf import InstancesConf
 from ProcessAlgorithms import (StartAlgorithm, StopAlgorithm,
                                 LogLevelAlgorithm , DeadlockCheckAlgorithm,
-                                StatusAlgorithm, ReloadAlgorithm)
+                                StatusAlgorithm, ReloadAlgorithm, CoredumpAlgorithm)
 from CommandResults import CommandResultFailure
 
 class ZorpHandler(object):
@@ -39,8 +39,12 @@ class ZorpHandler(object):
         return ZorpHandler._callAlgorithmToAllInstances(LogLevelAlgorithm())
 
     @staticmethod
-    def deadlockcheck(value):
-        return ZorpHandler._callFunctionToAllInstances(DeadlockCheckAlgorithm(value))
+    def deadlockcheck(value=None):
+        return ZorpHandler._callAlgorithmToAllInstances(DeadlockCheckAlgorithm(value))
+
+    @staticmethod
+    def coredump():
+        return ZorpHandler._callAlgorithmToAllInstances(CoredumpAlgorithm())
 
     @staticmethod
     def _callAlgorithmToAllInstances(algorithm):
