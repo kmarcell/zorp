@@ -24,7 +24,6 @@ class ProcessAlgorithm(object):
     def __init__(self):
         self.prefix = "" #TODO: @PREFIX@
         self.install_path = self.prefix + "/usr/lib/zorp/"
-        self.pidfile_dir = self.prefix + "/var/run/zorp/"
         self.force = False
         self.instance = None
         #variable indicates if force is active by force commands
@@ -53,7 +52,7 @@ class ProcessAlgorithm(object):
         return CommandResultSuccess("Process %s: running" % process)
 
     def getProcessPid(self, process):
-        pid_file = open(self.pidfile_dir + 'zorp-' + process + '.pid')
+        pid_file = open(self.prefix + '/var/run/zorp/zorp-' + process + '.pid')
         pid = int(pid_file.read())
         pid_file.close()
 
@@ -158,13 +157,15 @@ class ReloadAlgorithm(ProcessAlgorithm):
     def reload(self):
         running = self.isRunning(self.instance.process_name)
         if not running:
-            return CommandResultFailure("%s: %s" % (self.instance.process_name, running))
-        szig = SZIG(self.pidfile_dir + 'zorpctl.' + self.instance.process_name)
+            return CommandResultFailure("%s: %s" % (self.instance.process_name, running),
+                                        self.instance.process_name)
+        szig = SZIG(self.instance.process_name)
         szig.reload()
         if szig.reload_result():
             result = CommandResultSuccess("%s: Reload successful" % self.instance.process_name)
         else:
-            result = CommandResultFailure("%s: Reload failed" % self.instance.process_name)
+            result = CommandResultFailure("%s: Reload failed" % self.instance.process_name,
+                                          self.instance.process_name)
         return result
 
     def execute(self):
@@ -180,19 +181,19 @@ class DeadlockCheckAlgorithm(ProcessAlgorithm):
         running = self.isRunning(self.instance.process_name)
         if not running:
             return CommandResultFailure(str(running), self.instance.process_name)
-        szig = SZIG(self.pidfile_dir + 'zorpctl.' + self.instance.process_name)
+        szig = SZIG(self.instance.process_name)
         return "Instance: %s: deadlockcheck=%s" % (self.instance.process_name, szig.deadlockcheck)
 
     def setDeadlockcheck(self, value):
         running = self.isRunning(self.instance.process_name)
         if not running:
             return CommandResultFailure(str(running), self.instance.process_name)
-        szig = SZIG(self.pidfile_dir + 'zorpctl.' + self.instance.process_name)
+        szig = SZIG(self.instance.process_name)
         szig.deadlockcheck = value
         return CommandResultSuccess(self.instance.process_name)
 
     def execute(self):
-        if self.value:
+        if self.value != None:
             return self.setDeadlockcheck(self.value)
         else:
             return self.getDeadlockcheck()
@@ -207,30 +208,30 @@ class LogLevelAlgorithm(ProcessAlgorithm):
         super(LogLevelAlgorithm, self).__init__()
 
     def modifyloglevel(self, value):
+        szig = SZIG(self.instance.process_name)
         running = self.isRunning(self.instance.process_name)
         if not running:
             return CommandResultFailure(str(running), self.instance.process_name)
-        szig = SZIG(self.pidfile_dir + 'zorpctl.' + self.instance.process_name)
         szig.loglevel = value
         return CommandResultSuccess(self.instance.process_name)
 
     def getloglevel(self):
+        szig = SZIG(self.instance.process_name)
         running = self.isRunning(self.instance.process_name)
         if not running:
             return CommandResultFailure(str(running), self.instance.process_name)
-        szig = SZIG(self.pidfile_dir + 'zorpctl.' + self.instance.process_name)
         return CommandResultSuccess("Instance: %s: verbose_level=%d, logspec='%s'" %
-                                    (self.instance.process_name, szig.loglevel, szig.logspec))
+                                    (self.instance.process_name, szig.loglevel, szig.logspec),
+                                    szig.loglevel)
 
     def execute(self):
         if not self.value:
             return self.getloglevel()
         else:
+            value = self.getloglevel().value
             if self.value == "I":
-                value = self.getloglevel()
                 return self.modifyloglevel(value + 1) if value else value
             if self.value == "D":
-                value = self.getloglevel()
                 return self.modifyloglevel(value - 1) if value else value
             return self.modifyloglevel(self.value)
 
@@ -248,7 +249,7 @@ class StatusAlgorithm(ProcessAlgorithm):
         if running:
             status.pid = self.getProcessPid(self.instance.process_name)
             try:
-                szig = SZIG(self.pidfile_dir + 'zorpctl.' + self.instance.process_name)
+                szig = SZIG(self.instance.process_name)
                 status.threads = int(szig.get_value('stats.threads_running'))
                 status.policy_file = szig.get_value('info.policy.file')
                 timestamp_szig = szig.get_value('info.policy.file_stamp')

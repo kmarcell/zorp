@@ -111,10 +111,16 @@ class Handler(object):
 
         return string
 
-class SZIG():
+class SZIG(object):
 
-    def __init__(self, socket_path):
-        self.handler = Handler(socket_path)
+    def __init__(self, process_name):
+        self.prefix = "" #TODO: @PREFIX@
+        self.pidfile_dir = self.prefix + "/var/run/zorp/"
+        try:
+            self.handler = Handler(self.pidfile_dir + 'zorpctl.' + process_name)
+        except IOError as e:
+            e.strerror = process_name + " " + e.strerror
+            raise
 
     def get_value(self, key):
         response = self.handler.talk(MessageGetValue(key))
@@ -167,9 +173,7 @@ class SZIG():
         """
         Sets Deadlock Check, expects a boolean as value.
         """
-        self.handler.send(MessageSetDeadLockCheck(value))
-        if not self.handler.recv().is_succeeded:
-            raise SZIGError("Deadlock Check has not been set.")
+        self.handler.talk(MessageSetDeadLockCheck(value))
 
     def reload(self):
         self.handler.talk(MessageReload())
@@ -183,11 +187,9 @@ class SZIG():
         if not response.is_succeeded:
             raise SZIGError("Session stop failed! Response was: %s" % response.value)
 
-    #
     def authorize_accept(self, instance, description):
         self.handler.talk(MessageAuthorizeAccept(instance, description))
 
-    #
     def authorize_reject(self, instance, description):
         self.handler.talk(MessageAuthorizeReject(instance, description))
 
