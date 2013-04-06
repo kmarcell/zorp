@@ -238,11 +238,22 @@ class Zorpctl(object):
              description="Change and query Zorp deadlock checking settings")
         d_parse.add_argument('-d', '--disable', dest='value', action='store_false', default=None)
         d_parse.add_argument('-e', '--enable', dest='value', action='store_true', default=None)
-        d_parse.add_argument('instance_list', nargs=argparse.REMAINDER)
+        d_parse.add_argument('listofinstances', nargs=argparse.REMAINDER)
         d_args = d_parse.parse_args(params)
 
-        if d_args.value:
+        if d_args.value != None:
             UInterface.informUser("Changing Zorp deadlock checking settings:")
+            if not d_args.listofinstances:
+                UInterface.informUser(ZorpHandler.deadlockcheck(d_args.value))
+            else:
+                algorithm = DeadlockCheckAlgorithm(d_args.value)
+                Zorpctl.runAlgorithmOnList(d_args.listofinstances, algorithm)
+        else:
+            if not d_args.listofinstances:
+                UInterface.informUser(ZorpHandler.deadlockcheck())
+            else:
+                algorithm = DeadlockCheckAlgorithm()
+                Zorpctl.runAlgorithmOnList(d_args.listofinstances, algorithm)
 
     def szig(self):
         raise NotImplementedError()
