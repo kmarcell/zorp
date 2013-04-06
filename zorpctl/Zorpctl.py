@@ -111,34 +111,36 @@ class Zorpctl(object):
         raise NotImplementedError()
 
     @staticmethod
-    def reload_or_restart(params):
+    def _restartWhichNotReloaded(reload_result):
+        for result in reload_result:
+            if result:
+                UInterface.informUser(result)
+            else:
+                process_name = result.value
+                Zorpctl.restart([process_name])
+
+    @staticmethod
+    def reload_or_restart(listofinstances):
         """
         Tries to reload Zorp instance(s) by instance name
         if not succeeded than tries to restart instance(s)
         expects sequence of name(s)
         """
-        """
-        UInterface.informUser("Reloading or Restarting Zorp Firewall Suite:")
-        handler = InstanceHandler()
-        if not params:
-            status = handler.reloadAll()
-        else:
-            status = []
-            for instance in params:
-                status += handler.reload(instance)
 
-        for success in status:
-            if success:
-                UInterface.informUser(success)
-            else:
-                handler.stop(success.value)
-                result = handler.start(success.value)
-                if result:
-                    UInterface.informUser("%s: Restart successful" % result)
+        UInterface.informUser("Reloading or Restarting Zorp Firewall Suite:")
+        if not listofinstances:
+            reload_result = ZorpHandler.reload()
+            Zorpctl._restartWhichNotReloaded(reload_result)
+        else:
+            for instance_name in listofinstances:
+                reload_result = Zorpctl.runAlgorithmOnProcessOrInstance(instance_name, ReloadAlgorithm())
+                if utils.isSequence(reload_result):
+                    Zorpctl._restartWhichNotReloaded(reload_result)
                 else:
-                    UInterface.informUser("Both reload (%s) and restart (%s) failed" %
-                                          (success, result))
-        """
+                    if reload_result:
+                        UInterface.informUser(reload_result)
+                    else:
+                        Zorpctl.restart([instance_name])
 
     def stop_session(self):
         raise NotImplementedError()
