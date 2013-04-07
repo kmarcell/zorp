@@ -90,7 +90,7 @@ class Handler(object):
         if not response:
             raise SZIGError("There was an error while receiving the answer!")
 
-        return response[:-1]
+        return response[:-1] if response[-1:] == '\n' else response
 
     def _isSucceeded(self, response):
         """
@@ -124,15 +124,15 @@ class SZIG(object):
 
     def get_value(self, key):
         response = self.handler.talk(MessageGetValue(key))
-        return response.value
+        return None if response.value == "None" else response.value
 
     def get_sibling(self, node):
         response =  self.handler.talk(MessageGetSibling(node))
-        return response.value
+        return None if response.value == "None" else response.value
 
     def get_child(self, node):
         response =  self.handler.talk(MessageGetChild(node))
-        return response.value
+        return None if response.value == "None" else response.value
 
     @property
     def loglevel(self):

@@ -8,7 +8,7 @@ class Message(object):
         return " ".join(self.params) if utils.isSequence(self.params) else self.params
 
     def __str__(self):
-        return "%s%s\n" % (self.command, " " + self._strParams() if self.params else "")
+        return "%s%s\n" % (self.command, " " + (self._strParams() if self.params else ""))
 
 class MessageGetValue(Message):
     command = "GETVALUE"
@@ -18,18 +18,18 @@ class MessageGetValue(Message):
         super(MessageGetValue, self).__init__(key)
 
 class MessageGetSibling(Message):
-    command = "GETSBLING"
+    command = "GETSBLNG"
     param_name = ""
 
     def __init__(self, node):
-        super(MessageGetValue, self).__init__(node)
+        super(MessageGetSibling, self).__init__(node)
 
 class MessageGetChild(Message):
     command = "GETCHILD"
     param_name = ""
 
     def __init__(self, node):
-        super(MessageGetValue, self).__init__(node)
+        super(MessageGetChild, self).__init__(node)
 
 class MessageGetLogLevel(Message):
     command = "LOGGING"
