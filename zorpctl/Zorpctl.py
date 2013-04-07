@@ -1,13 +1,14 @@
 import argparse
 import subprocess
 import utils
+import json
 from UInterface import UInterface
 from Instances import ZorpHandler, InstanceHandler
 from InstanceClass import Instance
 from ProcessAlgorithms import (StartAlgorithm, StopAlgorithm,
                                 LogLevelAlgorithm , DeadlockCheckAlgorithm,
                                 StatusAlgorithm, ReloadAlgorithm,
-                                CoredumpAlgorithm)
+                                CoredumpAlgorithm, SzigWalkAlgorithm)
 
 #TODO: Logging
 """
@@ -255,8 +256,27 @@ class Zorpctl(object):
                 algorithm = DeadlockCheckAlgorithm()
                 Zorpctl.runAlgorithmOnList(d_args.listofinstances, algorithm)
 
-    def szig(self):
-        raise NotImplementedError()
+    @staticmethod
+    def szig(params):
+        sz_parser = argparse.ArgumentParser(
+                        prog='zorpctl szig',
+                        description="Display internal information from the given Zorp instance(s)")
+        sz_parser.add_argument('-w', '--walk', help='Walk the specified tree', nargs='*')
+        sz_parser.add_argument('-r', '--root', help='Set the root node of the walk operation', type=str)
+        sz_args = sz_parser.parse_args(params)
+
+        if not sz_args.walk:
+            for result in ZorpHandler.szig_walk(sz_args.root):
+                UInterface.informUser(json.dumps(result.value, indent=4) if result else result)
+        else:
+            algorithm = SzigWalkAlgorithm(sz_args.root)
+            for instance in sz_args.walk:
+                results = Zorpctl.runAlgorithmOnProcessOrInstance(instance, algorithm)
+                if utils.isSequence(results):
+                    for result in results:
+                        UInterface.informUser(json.dumps(result.value, indent=4) if result else result)
+                else:
+                    UInterface.informUser(json.dumps(results.value, indent=4) if results else results)
 
 HelpMessage = (
 'start' + '\t\t  Starts the specified Zorp instance(s)\n' +

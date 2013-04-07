@@ -282,6 +282,9 @@ class StatusAlgorithm(ProcessAlgorithm):
 
 class CoredumpAlgorithm(ProcessAlgorithm):
 
+    def __init__(self):
+        super(CoredumpAlgorithm, self).__init__()
+
     def coredump(self):
         szig = SZIG(self.instance.process_name)
         try:
@@ -292,3 +295,41 @@ class CoredumpAlgorithm(ProcessAlgorithm):
 
     def execute(self):
         return self.coredump()
+
+class SzigWalkAlgorithm(ProcessAlgorithm):
+
+    def __init__(self, root=""):
+        self.root = root
+        super(SzigWalkAlgorithm, self).__init__()
+
+    def getChilds(self, node):
+        #import pdb; pdb.set_trace()
+        child = self.szig.get_child(node)
+        if child:
+            result = {}
+            result[child] = self.walk(child)
+            sibling = self.szig.get_sibling(child)
+            while sibling:
+                result[sibling] = self.walk(sibling)
+                sibling = self.szig.get_sibling(sibling)
+            return result
+        else:
+            return None
+
+    def walk(self, node):
+        value = self.szig.get_value(node)
+        if value:
+            return value
+        else:
+            return self.getChilds(node)
+
+    def execute(self):
+        running = self.isRunning(self.instance.process_name)
+        if not running:
+            return running
+        try:
+            self.szig = SZIG(self.instance.process_name)
+        except IOError as e:
+            return CommandResultFailure(e.strerror)
+        return CommandResultSuccess("",
+            {self.root if self.root else self.instance.process_name : self.walk(self.root)})

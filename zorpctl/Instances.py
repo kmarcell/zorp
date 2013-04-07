@@ -1,7 +1,8 @@
 from InstancesConf import InstancesConf
 from ProcessAlgorithms import (StartAlgorithm, StopAlgorithm,
                                 LogLevelAlgorithm , DeadlockCheckAlgorithm,
-                                StatusAlgorithm, ReloadAlgorithm, CoredumpAlgorithm)
+                                StatusAlgorithm, ReloadAlgorithm, CoredumpAlgorithm,
+                                SzigWalkAlgorithm)
 from CommandResults import CommandResultFailure
 
 class ZorpHandler(object):
@@ -45,6 +46,10 @@ class ZorpHandler(object):
     @staticmethod
     def coredump():
         return ZorpHandler._callAlgorithmToAllInstances(CoredumpAlgorithm())
+
+    @staticmethod
+    def szig_walk(root):
+        return ZorpHandler._callAlgorithmToAllInstances(SzigWalkAlgorithm(root))
 
     @staticmethod
     def _callAlgorithmToAllInstances(algorithm):
