@@ -139,8 +139,9 @@ class StopAlgorithm(ProcessAlgorithm):
         self.waitTilTimeoutToStop()
 
         if self.isRunning(self.instance.process_name):
-            return CommandResultFailure("%s: did not exit in time (pid='%d', signo='%d', timeout='%d')" %
-                                        (self.instance.process_name, pid, sig, self.stop_timout))
+            return CommandResultFailure(
+                    "%s: did not exit in time (pid='%d', signo='%d', timeout='%d')" %
+                    (self.instance.process_name, pid, sig, self.stop_timout))
         else:
             result = CommandResultSuccess("%s: stopped" % self.instance.process_name)
             return result
@@ -180,18 +181,21 @@ class DeadlockCheckAlgorithm(ProcessAlgorithm):
         running = self.isRunning(self.instance.process_name)
         if not running:
             return CommandResultFailure(str(running), self.instance.process_name)
-        szig = SZIG(self.instance.process_name)
-        return "Instance: %s: deadlockcheck=%s" % (self.instance.process_name, szig.deadlockcheck)
+        return "Instance: %s: deadlockcheck=%s" % (self.instance.process_name,
+                                                   self.szig.deadlockcheck)
 
     def setDeadlockcheck(self, value):
         running = self.isRunning(self.instance.process_name)
         if not running:
             return CommandResultFailure(str(running), self.instance.process_name)
-        szig = SZIG(self.instance.process_name)
-        szig.deadlockcheck = value
+        self.szig.deadlockcheck = value
         return CommandResultSuccess(self.instance.process_name)
 
     def execute(self):
+        try:
+            self.szig = SZIG(self.instance.process_name)
+        except IOError as e:
+            return CommandResultFailure(e.strerror)
         if self.value != None:
             return self.setDeadlockcheck(self.value)
         else:
@@ -207,23 +211,28 @@ class LogLevelAlgorithm(ProcessAlgorithm):
         super(LogLevelAlgorithm, self).__init__()
 
     def modifyloglevel(self, value):
-        szig = SZIG(self.instance.process_name)
         running = self.isRunning(self.instance.process_name)
         if not running:
             return CommandResultFailure(str(running), self.instance.process_name)
-        szig.loglevel = value
+        self.szig.loglevel = value
         return CommandResultSuccess(self.instance.process_name)
 
     def getloglevel(self):
-        szig = SZIG(self.instance.process_name)
         running = self.isRunning(self.instance.process_name)
         if not running:
             return CommandResultFailure(str(running), self.instance.process_name)
         return CommandResultSuccess("Instance: %s: verbose_level=%d, logspec='%s'" %
-                                    (self.instance.process_name, szig.loglevel, szig.logspec),
-                                    szig.loglevel)
+                                    (self.instance.process_name, self.szig.loglevel,
+                                     self.szig.logspec), self.szig.loglevel)
 
     def execute(self):
+        running = self.isRunning(self.instance.process_name)
+        if not running:
+            return running
+        try:
+            self.szig = SZIG(self.instance.process_name)
+        except IOError as e:
+            return CommandResultFailure(e.strerror)
         if not self.value:
             return self.getloglevel()
         else:
@@ -256,7 +265,8 @@ class StatusAlgorithm(ProcessAlgorithm):
                 status.reloaded = str(timestamp_szig) == str(timestamp_os).split('.')[0]
             except IOError:
                 return CommandResultFailure(
-                        "Process %s: running, but error in socket communication" % self.instance.process_name)
+                        "Process %s: running, but error in socket communication" %
+                        self.instance.process_name)
 
         return status
 
