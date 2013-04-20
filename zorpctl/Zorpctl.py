@@ -15,7 +15,6 @@ from ProcessAlgorithms import (StartAlgorithm, StopAlgorithm,
 Questions:
 - Do we want the @file option for files containing instance name lists?
 - Is it a case when an instance does not have --num-of-processes?
-- Why does loglevel not raise?
 - how can i determine detailedStatus?
 """
 
@@ -287,12 +286,12 @@ HelpMessage = (
 'force-stop' + '\t  Forces the specified Zorp instance(s) to stop (SIGKILL)\n' +
 'force-restart' + '\t  Forces the specified Zorp instance(s) to restart (SIGKILL)\n' +
 'reload-or-restart' + ' Reload or restart the specified Zorp instance(s)\n' +
-'stop-session' + '\t  Stops the specified Zorp proxy session\n' +
+#'stop-session' + '\t  Stops the specified Zorp proxy session\n' +
 'coredump' + '\t  Create core dumps of the specified Zorp instance(s)\n' +
 'status' + '\t\t  Status of the specified Zorp instance(s). '+
             'For additional information use status -v or --verbose option\n' +
 'authorize' + '\t  Lists and manages authorizations\n' +
-'gui-status' + '\t  Status of the specified Zorp instance(s)\n' +
+#'gui-status' + '\t  Status of the specified Zorp instance(s)\n' +
 'version' + '\t\t  Display Zorp version information\n' +
 'inclog' + '\t\t  Raise the specified Zorp instance(s) log level by one\n' +
 'declog' + '\t\t  Lower the specified Zorp instance(s) log level by one\n' +
@@ -313,11 +312,11 @@ Commands = {
             'force-stop' : Zorpctl.force_stop,
             'force-restart' : Zorpctl.force_restart,
             'reload-or-restart' : Zorpctl.reload_or_restart,
-            'stop-session' : Zorpctl.stop_session,
+            #'stop-session' : Zorpctl.stop_session,
             'coredump' : Zorpctl.coredump,
             'status' : Zorpctl.status,
             'authorize' : Zorpctl.authorize,
-            'gui-status' : Zorpctl.gui_status,
+            #'gui-status' : Zorpctl.gui_status,
             'version' : Zorpctl.version,
             'inclog' : Zorpctl.inclog,
             'declog' : Zorpctl.declog,

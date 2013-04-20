@@ -33,8 +33,11 @@ class Handler(object):
         self.response_length = 4096
         self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.server_address = server_address
-
-        self.socket.connect(self.server_address)
+        try:
+            self.socket.connect(self.server_address)
+        except IOError as e:
+            e.strerror = "Socket not found, %s" % server_address
+            raise e
 
     def talk(self, message):
         """

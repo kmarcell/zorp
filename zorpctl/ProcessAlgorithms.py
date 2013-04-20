@@ -3,21 +3,20 @@ from szig import SZIG, SZIGError
 from CommandResults import CommandResultSuccess, CommandResultFailure
 
 class ProcessStatus(object):
-    def __init__(self, running, reloaded=None, pid=None, threads=None):
+    def __init__(self, name, running, reloaded=None, pid=None, threads=None):
+        self.name = name
         self.running = running
         self.reloaded = reloaded
         self.pid = pid
         self.threads = threads
 
     def __str__(self):
-        if not self.running:
-            return str(self.running)
-        else:
-            status = str(self.running) + ", "
+        status = "%s: %s" % (self.name, str(self.running))
+        if self.running:
             if not self.reloaded:
                 status += "policy NOT reloaded, "
-            status += "%d threads active, pid %d" % (self.threads, self.pid)
-            return status
+            status += ", %d threads active, pid %d" % (self.threads, self.pid)
+        return status
 
 class ProcessAlgorithm(object):
 
@@ -42,14 +41,14 @@ class ProcessAlgorithm(object):
             if e.strerror == "Permission denied":
                 return CommandResultFailure(e.strerror)
             else:
-                return CommandResultFailure("Process %s: not running" % process)
+                return CommandResultFailure("Process not running")
 
         try:
             open('/proc/' + str(pid) + '/status')
         except IOError:
             return CommandResultFailure("Invalid pid file no running process with pid %d!" % pid)
 
-        return CommandResultSuccess("Process %s: running" % process)
+        return CommandResultSuccess("running")
 
     def getProcessPid(self, process):
         pid_file = open(self.prefix + '/var/run/zorp/zorp-' + process + '.pid')
@@ -79,8 +78,9 @@ class StartAlgorithm(ProcessAlgorithm):
         if not self.instance.auto_start and not self.force:
             return CommandResultFailure("Process %s: has no-auto-start" % self.instance.process_name)
         if not 0 <= self.instance.process_num < self.instance.number_of_processes:
-            return CommandResultFailure("Process number %d must be between 0 and %d"
-                                        % (self.instance.process_num, self.instance.number_of_processes))
+            return CommandResultFailure("Process %s: number %d must be between 0 and %d"
+                                        % (self.instance.process_name,
+                                           self.instance.process_num, self.instance.number_of_processes))
         return CommandResultSuccess()
 
     def assembleStartCommand(self):
@@ -105,12 +105,14 @@ class StartAlgorithm(ProcessAlgorithm):
         if not valid:
             return valid
         args = self.assembleStartCommand()
-
-        subprocess.Popen(args, stderr=open("/dev/null", 'w'))
+        try:
+            subprocess.Popen(args, stderr=open("/dev/null", 'w'))
+        except OSError as e:
+            pass
         self.waitTilTimoutToStart()
 
         running = self.isRunning(self.instance.process_name)
-        return running if running else CommandResultFailure(
+        return "%s: %s" % (self.instance.process_name, running) if running else CommandResultFailure(
                                         "%s: did not start in time" % self.instance.process_name)
 
     def execute(self):
@@ -131,11 +133,14 @@ class StopAlgorithm(ProcessAlgorithm):
     def stop(self):
         running = self.isRunning(self.instance.process_name)
         if not running:
-            return CommandResultFailure(str(running))
+            return CommandResultFailure("%s: %s" % (self.instance.process_name, str(running)))
 
         pid = self.getProcessPid(self.instance.process_name)
         sig = signal.SIGKILL if self.force else signal.SIGTERM
-        os.kill(pid, sig)
+        try:
+            os.kill(pid, sig)
+        except OSError as e:
+            return CommandResultFailure("%s: %s" % (self.instance.process_name, e.strerror))
         self.waitTilTimeoutToStop()
 
         if self.isRunning(self.instance.process_name):
@@ -159,13 +164,16 @@ class ReloadAlgorithm(ProcessAlgorithm):
         if not running:
             return CommandResultFailure("%s: %s" % (self.instance.process_name, running),
                                         self.instance.process_name)
-        szig = SZIG(self.instance.process_name)
-        szig.reload()
-        if szig.reload_result():
-            result = CommandResultSuccess("%s: Reload successful" % self.instance.process_name)
-        else:
-            result = CommandResultFailure("%s: Reload failed" % self.instance.process_name,
+	try:
+            szig = SZIG(self.instance.process_name)
+            szig.reload()
+            if szig.reload_result():
+                result = CommandResultSuccess("%s: Reload successful" % self.instance.process_name)
+            else:
+                result = CommandResultFailure("%s: Reload failed" % self.instance.process_name,
                                           self.instance.process_name)
+        except IOError as e:
+            return CommandResultFailure(e.strerror, self.instance.process_name)
         return result
 
     def execute(self):
@@ -253,7 +261,7 @@ class StatusAlgorithm(ProcessAlgorithm):
 
     def status(self):
         running = self.isRunning(self.instance.process_name)
-        status = ProcessStatus(running)
+        status = ProcessStatus(self.instance.process_name, running)
         if running:
             status.pid = self.getProcessPid(self.instance.process_name)
             try:
