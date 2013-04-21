@@ -3,12 +3,13 @@ from szig import SZIG, SZIGError
 from CommandResults import CommandResultSuccess, CommandResultFailure
 
 class ProcessStatus(object):
-    def __init__(self, name, running, reloaded=None, pid=None, threads=None):
+    def __init__(self, name, running, reloaded=None, pid=None, threads=None, cpu=None):
         self.name = name
         self.running = running
         self.reloaded = reloaded
         self.pid = pid
         self.threads = threads
+        self.cpu = cpu
 
     def __str__(self):
         status = "%s: %s" % (self.name, str(self.running))
@@ -16,6 +17,7 @@ class ProcessStatus(object):
             if not self.reloaded:
                 status += "policy NOT reloaded, "
             status += ", %d threads active, pid %d" % (self.threads, self.pid)
+            status += "\n,  %s" % self.cpu
         return status
 
 class ProcessAlgorithm(object):
@@ -164,7 +166,7 @@ class ReloadAlgorithm(ProcessAlgorithm):
         if not running:
             return CommandResultFailure("%s: %s" % (self.instance.process_name, running),
                                         self.instance.process_name)
-	try:
+        try:
             szig = SZIG(self.instance.process_name)
             szig.reload()
             if szig.reload_result():
@@ -259,6 +261,64 @@ class StatusAlgorithm(ProcessAlgorithm):
         self.detailed = detailed
         super(StatusAlgorithm, self).__init__()
 
+    def getJiffiesPerSec(self):
+        jiffies_per_sec = -1
+        idle_jiffies = 0
+        idle_sec = 0
+
+        try:
+            stat_file = open('/proc/stat', 'r')
+        except IOError:
+            return CommandResultFailure("Can not open /proc/stat")
+        for buf in stat_file:
+            if (buf[:4] != "cpu "):
+                i = 0
+                index = 0
+                buf_len = len(buf)
+                while index < buf_len and i < 4:
+                    while index < buf_len and buf[index] != ' ':
+                        index += 1
+                    while index < buf_len and buf[index] == ' ':
+                        index += 1
+                if i != 4 or index >= buf_len:
+                    break
+                idle_jiffies = float(buf[index:])
+                break
+        stat_file.close()
+
+        if idle_jiffies <= 0:
+            return 0
+
+        try:
+            uptime_file = open('/proc/uptime', 'r')
+        except IOError:
+            return CommandResultFailure("Can not open /proc/uptime")
+        idle_sec = float(uptime_file.readline().split()[1])
+        uptime_file.close()
+        if idle_sec <= 0:
+            return 0
+
+        jiffies_per_sec = int(round(5 + (idle_jiffies/idle_sec), -1))
+        return jiffies_per_sec
+
+    def getProcInfo(self, pid):
+        try:
+            file = open("/proc/%s/stat" % pid, 'r')
+        except IOError:
+            return CommandResultFailure("Can not open /proc/%s/stat" % pid)
+
+        values = file.read().split()
+        file.close()
+        keys = ("pid", "comm", "state", "ppid", "pgrp", "session", "tty_nr", "tpgid", "flags", "minflt", "cminflt", "majflt",
+            "cmajflt", "utime", "stime", "cutime", "cstime", "priority", "nice", "_dummyzero", "itrealvalue",
+            "starttime", "vsize", "rss", "rlim", "startcode", "endcode", "startstack", "kstkesp",
+            "kstkeip", "signal", "blocked", "sigignore", "sigcatch", "wchan", "nswap", "cnswap",
+            "exit_signal", "processor")
+        proc_info = {}
+        for value, key in zip(values, keys):
+            proc_info[key] = value
+        return proc_info
+
     def status(self):
         running = self.isRunning(self.instance.process_name)
         status = ProcessStatus(self.instance.process_name, running)
@@ -278,9 +338,26 @@ class StatusAlgorithm(ProcessAlgorithm):
 
         return status
 
-    def detailedStatus(self, status):
-        raise NotImplementedError()
+    def detailedStatus(self):
+        status = self.status()
+        jps = self.getJiffiesPerSec()
+        proc_info = self.getProcInfo(status.pid)
 
+        usertime = float(proc_info['utime']) / jps
+        usermin = int(usertime / 60)
+        usertime -= usermin * 60
+
+        systime = float(proc_info["stime"]) / jps
+        sysmin = int(systime / 60)
+        systime -= sysmin * 60
+
+        realtime = usertime + systime
+        realmin = int(realtime / 60)
+        realtime -= realmin * 60
+
+        status.cpu = "cpu: real=%d:%f, user=%d:%f, sys=%d:%f" % (
+                        realmin, realtime, usermin, usertime, sysmin, systime)
+        return status
 
     def execute(self):
         if self.detailed:
