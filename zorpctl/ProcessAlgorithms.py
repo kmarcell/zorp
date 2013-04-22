@@ -271,7 +271,9 @@ class StatusAlgorithm(ProcessAlgorithm):
         except IOError:
             return CommandResultFailure("Can not open /proc/stat")
         for buf in stat_file:
-            if (buf[:4] != "cpu "):
+            if (buf[:4] == "cpu "):
+                line = buf
+        """
                 i = 0
                 index = 0
                 buf_len = len(buf)
@@ -284,6 +286,9 @@ class StatusAlgorithm(ProcessAlgorithm):
                     break
                 idle_jiffies = float(buf[index:])
                 break
+        """
+	#user, nice, system, idle, iowait, irq, softirq = line.split()
+        idle_jiffies = float(line.split()[5])
         stat_file.close()
 
         if idle_jiffies <= 0:
@@ -340,6 +345,8 @@ class StatusAlgorithm(ProcessAlgorithm):
 
     def detailedStatus(self):
         status = self.status()
+        if not status.running:
+            return status
         jps = self.getJiffiesPerSec()
         proc_info = self.getProcInfo(status.pid)
 
