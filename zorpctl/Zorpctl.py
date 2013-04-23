@@ -209,8 +209,25 @@ class Zorpctl(object):
             algorithm = StatusAlgorithm(StatusAlgorithm.DETAILED) if s_args.verbose else StatusAlgorithm()
             Zorpctl.runAlgorithmOnList(s_args.listofinstances, algorithm)
 
-    def authorize(self):
-        raise NotImplementedError()
+    @staticmethod
+    def authorize(params):
+        """
+        Lists and manages authorizations of Zorp instance(s) by instance name
+        expects sequence of name(s)
+        """
+        a_parse = argparse.ArgumentParser(
+             prog='zorpctl authorize',
+             description="Lists and manages authorizations")
+        a_parse.add_argument('--accept', dest='value', action='store_true', default=None)
+        a_parse.add_argument('--reject', dest='value', action='store_false', default=None)
+        a_parse.add_argument('description')
+        a_parse.add_argument('listofinstances', nargs=argparse.REMAINDER)
+        a_args = a_parse.parse_args(params)
+        if a_args.value == None:
+            UInterface.informUser("usage: zorpctl authorize [-h] --accept [--reject] description ...\n" +
+                                  "zorpctl authorize: either the '--accept' or '--reject' option has to be specified")
+            return
+        print(a_args)
 
     def gui_status(self):
         raise NotImplementedError()

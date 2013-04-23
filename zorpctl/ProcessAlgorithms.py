@@ -113,7 +113,7 @@ class StartAlgorithm(ProcessAlgorithm):
         args = self.assembleStartCommand()
         try:
             subprocess.Popen(args, stderr=open("/dev/null", 'w'))
-        except OSError as e:
+        except OSError:
             pass
         self.waitTilTimoutToStart()
 
@@ -449,3 +449,32 @@ class SzigWalkAlgorithm(ProcessAlgorithm):
             return CommandResultFailure(e.strerror)
         return CommandResultSuccess("",
             {self.root if self.root else self.instance.process_name : self.walk(self.root)})
+
+class AuthorizeAlgorithm(ProcessAlgorithm):
+
+    ACCEPT = True
+    REJECT = False
+
+    def __init__(self, accept, description):
+        self.accept = accept
+        self.description = description
+        super(SzigWalkAlgorithm, self).__init__()
+
+    def accept(self):
+        raise NotImplementedError()
+
+    def reject(self):
+        raise NotImplementedError()
+
+    def execute(self):
+        running = self.isRunning(self.instance.process_name)
+        if not running:
+            return running
+        try:
+            self.szig = SZIG(self.instance.process_name)
+        except IOError as e:
+            return CommandResultFailure(e.strerror)
+        if self.accept:
+            self.accept()
+        else:
+            self.reject()
