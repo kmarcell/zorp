@@ -1,4 +1,4 @@
-import os, signal, time, subprocess
+import os, signal, time, subprocess, datetime
 from szig import SZIG, SZIGError
 from CommandResults import CommandResultSuccess, CommandResultFailure
 
@@ -6,10 +6,11 @@ class ProcessStatus(object):
     def __init__(self, name, running, reloaded=None, pid=None, threads=None, cpu=None):
         self.name = name
         self.running = running
+        self.reload_timestamp = 0
         self.reloaded = reloaded
         self.pid = pid
         self.threads = threads
-        self.cpu = cpu
+        self.details = None
 
     def __str__(self):
         status = "%s: %s" % (self.name, str(self.running))
@@ -17,7 +18,8 @@ class ProcessStatus(object):
             if not self.reloaded:
                 status += "policy NOT reloaded, "
             status += ", %d threads active, pid %d" % (self.threads, self.pid)
-            status += "\n,  %s" % self.cpu
+            if self.details:
+                status += "\n%s" % self.details
         return status
 
 class ProcessAlgorithm(object):
@@ -261,10 +263,7 @@ class StatusAlgorithm(ProcessAlgorithm):
         self.detailed = detailed
         super(StatusAlgorithm, self).__init__()
 
-    def getJiffiesPerSec(self):
-        jiffies_per_sec = -1
-        idle_jiffies = 0
-        idle_sec = 0
+    def _getIdleJiffies(self):
 
         try:
             stat_file = open('/proc/stat', 'r')
@@ -272,27 +271,12 @@ class StatusAlgorithm(ProcessAlgorithm):
             return CommandResultFailure("Can not open /proc/stat")
         for buf in stat_file:
             if (buf[:4] == "cpu "):
-                line = buf
-        """
-                i = 0
-                index = 0
-                buf_len = len(buf)
-                while index < buf_len and i < 4:
-                    while index < buf_len and buf[index] != ' ':
-                        index += 1
-                    while index < buf_len and buf[index] == ' ':
-                        index += 1
-                if i != 4 or index >= buf_len:
-                    break
-                idle_jiffies = float(buf[index:])
+                idle_jiffies = float(buf.split()[4])
                 break
-        """
-	#user, nice, system, idle, iowait, irq, softirq = line.split()
-        idle_jiffies = float(line.split()[5])
         stat_file.close()
+        return idle_jiffies
 
-        if idle_jiffies <= 0:
-            return 0
+    def _getIdleSec(self):
 
         try:
             uptime_file = open('/proc/uptime', 'r')
@@ -300,13 +284,23 @@ class StatusAlgorithm(ProcessAlgorithm):
             return CommandResultFailure("Can not open /proc/uptime")
         idle_sec = float(uptime_file.readline().split()[1])
         uptime_file.close()
-        if idle_sec <= 0:
-            return 0
+
+        return idle_sec
+
+    def _getJiffiesPerSec(self):
+        idle_jiffies = self._getIdleJiffies()
+        idle_sec = self._getIdleSec()
+
+        if not idle_jiffies:
+            return idle_jiffies
+
+        if not idle_sec:
+            return idle_sec
 
         jiffies_per_sec = int(round(5 + (idle_jiffies/idle_sec), -1))
         return jiffies_per_sec
 
-    def getProcInfo(self, pid):
+    def _getProcInfo(self, pid):
         try:
             file = open("/proc/%s/stat" % pid, 'r')
         except IOError:
@@ -314,11 +308,13 @@ class StatusAlgorithm(ProcessAlgorithm):
 
         values = file.read().split()
         file.close()
-        keys = ("pid", "comm", "state", "ppid", "pgrp", "session", "tty_nr", "tpgid", "flags", "minflt", "cminflt", "majflt",
-            "cmajflt", "utime", "stime", "cutime", "cstime", "priority", "nice", "_dummyzero", "itrealvalue",
-            "starttime", "vsize", "rss", "rlim", "startcode", "endcode", "startstack", "kstkesp",
-            "kstkeip", "signal", "blocked", "sigignore", "sigcatch", "wchan", "nswap", "cnswap",
-            "exit_signal", "processor")
+        keys = ("pid", "comm", "state", "ppid", "pgrp", "session", "tty_nr",
+                "tpgid", "flags", "minflt", "cminflt", "majflt", "cmajflt",
+                "utime", "stime", "cutime", "cstime", "priority", "nice",
+                "_dummyzero", "itrealvalue", "starttime", "vsize", "rss",
+                "rlim", "startcode", "endcode", "startstack", "kstkesp",
+                "kstkeip", "signal", "blocked", "sigignore", "sigcatch",
+                "wchan", "nswap", "cnswap", "exit_signal", "processor")
         proc_info = {}
         for value, key in zip(values, keys):
             proc_info[key] = value
@@ -334,6 +330,7 @@ class StatusAlgorithm(ProcessAlgorithm):
                 status.threads = int(szig.get_value('stats.threads_running'))
                 status.policy_file = szig.get_value('info.policy.file')
                 timestamp_szig = szig.get_value('info.policy.file_stamp')
+                status.reload_timestamp = szig.get_value('info.policy.reload_stamp')
                 timestamp_os = os.path.getmtime(status.policy_file)
                 status.reloaded = str(timestamp_szig) == str(timestamp_os).split('.')[0]
             except IOError:
@@ -347,8 +344,12 @@ class StatusAlgorithm(ProcessAlgorithm):
         status = self.status()
         if not status.running:
             return status
-        jps = self.getJiffiesPerSec()
-        proc_info = self.getProcInfo(status.pid)
+        jps = self._getJiffiesPerSec()
+        if not jps:
+            return jps
+        proc_info = self._getProcInfo(status.pid)
+        if not proc_info:
+            return proc_info
 
         usertime = float(proc_info['utime']) / jps
         usermin = int(usertime / 60)
@@ -362,8 +363,29 @@ class StatusAlgorithm(ProcessAlgorithm):
         realmin = int(realtime / 60)
         realtime -= realmin * 60
 
-        status.cpu = "cpu: real=%d:%f, user=%d:%f, sys=%d:%f" % (
-                        realmin, realtime, usermin, usertime, sysmin, systime)
+        try:
+            uptime_file = open("/proc/uptime")
+            uptime_float = float(uptime_file.readline().split()[0])
+            uptime_file.close()
+        except IOError as e:
+            return CommandResultFailure("Can not open /proc/uptime! %s" % e.strerror)
+
+        uptime = datetime.datetime.fromtimestamp(uptime_float)
+        uptime_timedelta = uptime - datetime.datetime.fromtimestamp(0)
+
+        now = datetime.datetime.now()
+        starttime = (now - (uptime_timedelta) +
+                            (datetime.datetime.fromtimestamp(float(proc_info["starttime"]) / jps) -
+                             datetime.datetime.fromtimestamp(0)))
+
+        policy_loaded= datetime.datetime.fromtimestamp(float(status.reload_timestamp))
+
+        status.details = ("started at: %s\n" % starttime +
+                          "policy: file=%s, loaded=%s\n" % (status.policy_file, policy_loaded) +
+                          "cpu: real=%d:%f, user=%d:%f, sys=%d:%f\n" % (
+                            realmin, realtime, usermin, usertime, sysmin, systime) +
+                          "memory: vsz=%s, rss=%s" %
+                          (int(proc_info["vsize"])/1024, int(proc_info["rss"])*4))
         return status
 
     def execute(self):
