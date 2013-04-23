@@ -96,7 +96,7 @@ class Zorpctl(object):
             Zorpctl.runAlgorithmOnList(listofinstances, algorithm)
 
     @staticmethod
-    def force_start(params):
+    def force_start(listofinstances):
         """
         Starts Zorp instance(s) by instance name
         even if no-auto-start is set
@@ -104,11 +104,40 @@ class Zorpctl(object):
         """
         UInterface.informUser("Starting Zorp Firewall Suite:")
 
-    def force_stop(self):
-        raise NotImplementedError()
+        if not listofinstances:
+            UInterface.informUser(ZorpHandler.force_start())
+        else:
+            algorithm = StartAlgorithm()
+            algorithm.force
+            Zorpctl.runAlgorithmOnList(listofinstances, algorithm)
 
-    def force_restart(self):
-        raise NotImplementedError()
+    @staticmethod
+    def force_stop(listofinstances):
+        """
+        Stops Zorp instance(s) by instance name
+        with SIGKILL
+        expects sequence of name(s)
+        """
+        UInterface.informUser("Stopping Zorp Firewall Suite:")
+
+        if not listofinstances:
+            UInterface.informUser(ZorpHandler.force_stop())
+        else:
+            algorithm = StopAlgorithm()
+            algorithm.force = True
+            Zorpctl.runAlgorithmOnList(listofinstances, algorithm)
+
+    @staticmethod
+    def force_restart(listofinstances):
+        """
+        Restarts Zorp instance(s) by instance name
+        with force_stop and force_start
+        expects sequence of name(s)
+        """
+        UInterface.informUser("Restarting Zorp Firewall Suite:")
+        Zorpctl.force_stop(listofinstances)
+        Zorpctl.force_start(listofinstances)
+
 
     @staticmethod
     def _restartWhichNotReloaded(reload_result):

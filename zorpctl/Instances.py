@@ -12,8 +12,20 @@ class ZorpHandler(object):
         return ZorpHandler._callAlgorithmToAllInstances(StartAlgorithm())
 
     @staticmethod
+    def force_start():
+        algorithm = StartAlgorithm()
+        algorithm.force = True
+        return ZorpHandler._callAlgorithmToAllInstances(algorithm)
+
+    @staticmethod
     def stop():
         return ZorpHandler._callAlgorithmToAllInstances(StopAlgorithm())
+
+    @staticmethod
+    def force_stop():
+        algorithm = StopAlgorithm()
+        algorithm.force = True
+        return ZorpHandler._callAlgorithmToAllInstances(algorithm)
 
     @staticmethod
     def reload():

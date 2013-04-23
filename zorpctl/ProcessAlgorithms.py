@@ -108,6 +108,8 @@ class StartAlgorithm(ProcessAlgorithm):
         valid = self.isValidInstanceForStart()
         if not valid:
             return valid
+        if not self.instance.auto_start and not self.force:
+            return CommandResultFailure("%s: not started, because no-auto-start is set")
         args = self.assembleStartCommand()
         try:
             subprocess.Popen(args, stderr=open("/dev/null", 'w'))
