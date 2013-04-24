@@ -9,62 +9,62 @@ class ZorpHandler(object):
 
     @staticmethod
     def start():
-        return ZorpHandler._callAlgorithmToAllInstances(StartAlgorithm())
+        return ZorpHandler.callAlgorithmToAllInstances(StartAlgorithm())
 
     @staticmethod
     def force_start():
         algorithm = StartAlgorithm()
         algorithm.force = True
-        return ZorpHandler._callAlgorithmToAllInstances(algorithm)
+        return ZorpHandler.callAlgorithmToAllInstances(algorithm)
 
     @staticmethod
     def stop():
-        return ZorpHandler._callAlgorithmToAllInstances(StopAlgorithm())
+        return ZorpHandler.callAlgorithmToAllInstances(StopAlgorithm())
 
     @staticmethod
     def force_stop():
         algorithm = StopAlgorithm()
         algorithm.force = True
-        return ZorpHandler._callAlgorithmToAllInstances(algorithm)
+        return ZorpHandler.callAlgorithmToAllInstances(algorithm)
 
     @staticmethod
     def reload():
-        return ZorpHandler._callAlgorithmToAllInstances(ReloadAlgorithm())
+        return ZorpHandler.callAlgorithmToAllInstances(ReloadAlgorithm())
 
     @staticmethod
     def status():
-        return ZorpHandler._callAlgorithmToAllInstances(StatusAlgorithm())
+        return ZorpHandler.callAlgorithmToAllInstances(StatusAlgorithm())
 
     @staticmethod
     def detailedStatus():
-        return ZorpHandler._callAlgorithmToAllInstances(StatusAlgorithm(StatusAlgorithm.DETAILED))
+        return ZorpHandler.callAlgorithmToAllInstances(StatusAlgorithm(StatusAlgorithm.DETAILED))
 
     @staticmethod
     def inclog():
-        return ZorpHandler._callAlgorithmToAllInstances(LogLevelAlgorithm(LogLevelAlgorithm.INCREMENT))
+        return ZorpHandler.callAlgorithmToAllInstances(LogLevelAlgorithm(LogLevelAlgorithm.INCREMENT))
 
     @staticmethod
     def declog():
-        return ZorpHandler._callAlgorithmToAllInstances(LogLevelAlgorithm(LogLevelAlgorithm.DECREASE))
+        return ZorpHandler.callAlgorithmToAllInstances(LogLevelAlgorithm(LogLevelAlgorithm.DECREASE))
 
     @staticmethod
     def getlog():
-        return ZorpHandler._callAlgorithmToAllInstances(LogLevelAlgorithm())
+        return ZorpHandler.callAlgorithmToAllInstances(LogLevelAlgorithm())
 
     @staticmethod
     def deadlockcheck(value=None):
-        return ZorpHandler._callAlgorithmToAllInstances(DeadlockCheckAlgorithm(value))
+        return ZorpHandler.callAlgorithmToAllInstances(DeadlockCheckAlgorithm(value))
 
     @staticmethod
     def coredump():
-        return ZorpHandler._callAlgorithmToAllInstances(CoredumpAlgorithm())
+        return ZorpHandler.callAlgorithmToAllInstances(CoredumpAlgorithm())
 
     @staticmethod
     def szig_walk(root):
-        return ZorpHandler._callAlgorithmToAllInstances(SzigWalkAlgorithm(root))
+        return ZorpHandler.callAlgorithmToAllInstances(SzigWalkAlgorithm(root))
 
     @staticmethod
-    def _callAlgorithmToAllInstances(algorithm):
+    def callAlgorithmToAllInstances(algorithm):
         result = []
         try:
             for instance in InstancesConf():
