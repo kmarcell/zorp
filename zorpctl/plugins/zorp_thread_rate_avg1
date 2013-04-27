@@ -1,0 +1,50 @@
+#!/usr/bin/env python
+# vim: ft=python
+"""
+=head1 NAME
+
+Zorp thread rate average 1 - Plugin to monitor the average rate of threads in Zorp
+
+=head1 CONFIGURATION
+
+No configuration
+
+=head1 AUTHOR
+
+Marcell Kresz
+
+=head1 LICENSE
+
+GNU GPL
+
+=head1 MAGIC MARKERS
+
+ #%# family=auto
+ #%# capabilities=autoconf
+"""
+
+import sys, os
+sys.path.append(os.path.dirname('/usr/lib/python2.7/zorpctl/'))
+
+from Munin import *
+from Instances import InstanceHandler
+
+if len(sys.argv) > 1:
+    if sys.argv[1] == "autoconf":
+        print "yes"
+
+    if sys.argv[1] == "config":
+        print 'graph_title Average Rate of threads 1min'
+        print 'graph_vlabel average rate of threads'
+        print 'graph_category zorp'
+        print 'graph_info This graph shows the 1min average rate of running threads in Zorp.'
+        for instance in RunningInstances():
+            print "%s.label %s" % (instance.name, instance.name)
+else:
+    algorithm = GetThreadRateAlgorithm()
+    for instance in RunningInstances():
+        results = InstanceHandler.executeAlgorithmOnInstanceProcesses(instance, algorithm)
+        for result in results:
+            sum_avg1 = result["avg5"]
+        print "%s.value %d" % (instance.name, sum_avg1)
+
