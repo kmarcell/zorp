@@ -24,27 +24,26 @@ GNU GPL
  #%# capabilities=autoconf
 """
 
-import sys, os
-sys.path.append(os.path.dirname('/usr/lib/python2.7/zorpctl/'))
+import sys
 
-from Munin import *
-from Instances import InstanceHandler
+from zorpctl.Munin import *
+from zorpctl.Instances import InstanceHandler
 
 if len(sys.argv) > 1:
     if sys.argv[1] == "autoconf":
-        print "yes"
+        print("yes")
 
     if sys.argv[1] == "config":
-        print 'graph_title Number of running sessions'
-        print 'graph_vlabel number of running sessions'
-        print 'graph_category zorp'
-        print 'graph_info This graph shows the number of running sessions.'
+        print('graph_title Number of running sessions')
+        print('graph_vlabel number of running sessions')
+        print('graph_category zorp')
+        print('graph_info This graph shows the number of running sessions.')
         for instance in RunningInstances():
-            print "%s.label %s" % (instance.name, instance.name)
+            print("%s.label %s" % (instance.name, instance.name))
 
 else:
     algorithm = GetSessionsRunningAlgorithm()
     for instance in RunningInstances():
         results = InstanceHandler.executeAlgorithmOnInstanceProcesses(instance, algorithm)
-        print "%s.value %d" % (instance.name, sum(results))
+        print("%s.value %d" % (instance.name, sum(results)))
 
