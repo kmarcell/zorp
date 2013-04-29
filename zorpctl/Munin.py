@@ -19,6 +19,8 @@ class RunningInstances(object):
         algorithm.setInstance(instance)
         if algorithm.isRunning(instance.process_name):
             return instance
+        else:
+            return self.next()
 
 class GetAlgorithm(ProcessAlgorithm):
 
@@ -67,19 +69,3 @@ class GetThreadsRunningAlgorithm(GetAlgorithm):
     def get(self):
         result = self.szig.get_value('stats.threads_running')
         return int(result) if result else 0
-
-def sumSessionsRunning():
-    results = ZorpHandler.callAlgorithmToAllInstances(GetSessionsRunningAlgorithm())
-    sessions_running_sum = 0
-    for result in results:
-        if not result:
-            return -1
-        sessions_running_sum += result.value
-    return sessions_running_sum
-
-def thread_rate():
-    results = ZorpHandler.callAlgorithmToAllInstances(GetThreadRateAlgorithm())
-    for result in results:
-        if result:
-            return result.value
-
