@@ -1,8 +1,7 @@
-from Instances import ZorpHandler
-from szig import SZIG
-from ProcessAlgorithms import ProcessAlgorithm
-from CommandResults import CommandResultFailure, CommandResultSuccess
-from InstancesConf import InstancesConf
+from zorpctl.szig import SZIG
+from zorpctl.ProcessAlgorithms import ProcessAlgorithm
+from zorpctl.CommandResults import CommandResultFailure
+from zorpctl.InstancesConf import InstancesConf
 
 class RunningInstances(object):
 

@@ -1,6 +1,6 @@
 import os, signal, time, subprocess, datetime
-from szig import SZIG, SZIGError
-from CommandResults import CommandResultSuccess, CommandResultFailure
+from zorpctl.szig import SZIG, SZIGError
+from zorpctl.CommandResults import CommandResultSuccess, CommandResultFailure
 
 class ProcessStatus(object):
     def __init__(self, name, running, reloaded=None, pid=None, threads=None, cpu=None):

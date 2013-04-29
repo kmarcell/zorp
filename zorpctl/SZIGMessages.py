@@ -1,4 +1,4 @@
-import utils
+import zorpctl.utils as utils
 
 class Message(object):
     def __init__(self, params = None):

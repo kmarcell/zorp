@@ -1,11 +1,14 @@
+#!/usr/bin/env python
+# vim: ft=python
+
 import argparse
 import subprocess
-import utils
 import json
-from UInterface import UInterface
-from Instances import ZorpHandler, InstanceHandler
-from InstanceClass import Instance
-from ProcessAlgorithms import (StartAlgorithm, StopAlgorithm,
+import zorpctl.utils as utils
+from zorpctl.UInterface import UInterface
+from zorpctl.Instances import ZorpHandler, InstanceHandler
+from zorpctl.InstanceClass import Instance
+from zorpctl.ProcessAlgorithms import (StartAlgorithm, StopAlgorithm,
                                 LogLevelAlgorithm , DeadlockCheckAlgorithm,
                                 StatusAlgorithm, ReloadAlgorithm,
                                 CoredumpAlgorithm, SzigWalkAlgorithm)

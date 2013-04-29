@@ -1,4 +1,4 @@
-import utils
+import zorpctl.utils
 
 class UInterface(object):
     def __init__(self):
@@ -6,7 +6,7 @@ class UInterface(object):
 
     @staticmethod
     def informUser(message):
-        if utils.isSequence(message):
+        if zorpctl.utils.isSequence(message):
             for msg in message:
                 print(msg)
         else:

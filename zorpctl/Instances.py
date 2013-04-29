@@ -1,9 +1,9 @@
-from InstancesConf import InstancesConf
-from ProcessAlgorithms import (StartAlgorithm, StopAlgorithm,
+from zorpctl.InstancesConf import InstancesConf
+from zorpctl.ProcessAlgorithms import (StartAlgorithm, StopAlgorithm,
                                 LogLevelAlgorithm , DeadlockCheckAlgorithm,
                                 StatusAlgorithm, ReloadAlgorithm, CoredumpAlgorithm,
                                 SzigWalkAlgorithm)
-from CommandResults import CommandResultFailure
+from zorpctl.CommandResults import CommandResultFailure
 
 class ZorpHandler(object):
 

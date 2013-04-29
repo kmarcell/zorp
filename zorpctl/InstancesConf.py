@@ -1,5 +1,5 @@
 import argparse
-from InstanceClass import Instance
+from zorpctl.InstanceClass import Instance
 
 class InstancesConf(object):
     def __init__(self):
