@@ -87,3 +87,22 @@ class GetMemoryRSSAlgorithm(ProcessAlgorithm):
        if not running:
             return CommandResultFailure("%s: %s", (self.instance.process_name, running))
        return self.get()
+
+class GetMemoryVSZAlgorithm(ProcessAlgorithm):
+
+   def __init__(self):
+       super(GetMemoryVSZAlgorithm, self).__init__()
+
+   def get(self):
+       algorithm = GetProcInfoAlgorithm()
+       algorithm.setInstance(self.instance)
+       proc_info = algorithm.run()
+       if not proc_info:
+           return proc_info
+       return CommandResultSuccess("", int(proc_info["vsize"]))
+
+   def execute(self):
+       running = self.isRunning(self.instance.process_name)
+       if not running:
+            return CommandResultFailure("%s: %s", (self.instance.process_name, running))
+       return self.get()
