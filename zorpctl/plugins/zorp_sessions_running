@@ -42,6 +42,9 @@ if len(sys.argv) > 1:
             print("%s.label %s" % (instance.name, instance.name))
 
 else:
+    """
+    Minus one return value indicates error!
+    """
     algorithm = GetSessionsRunningAlgorithm()
     for instance in RunningInstances():
         results = InstanceHandler.executeAlgorithmOnInstanceProcesses(instance, algorithm)

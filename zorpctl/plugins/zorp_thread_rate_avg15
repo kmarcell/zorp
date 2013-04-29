@@ -40,6 +40,9 @@ if len(sys.argv) > 1:
         for instance in RunningInstances():
             print("%s.label %s" % (instance.name, instance.name))
 else:
+    """
+    Minus one return value indicates error!
+    """
     algorithm = GetThreadRateAlgorithm()
     for instance in RunningInstances():
         results = InstanceHandler.executeAlgorithmOnInstanceProcesses(instance, algorithm)
