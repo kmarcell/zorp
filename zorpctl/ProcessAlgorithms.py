@@ -14,12 +14,11 @@ class ProcessStatus(object):
 
     def __str__(self):
         status = "%s: %s" % (self.name, str(self.running))
-        if self.running:
-            if not self.reloaded:
-                status += "policy NOT reloaded, "
-            status += ", %d threads active, pid %d" % (self.threads, self.pid)
-            if self.details:
-                status += "\n%s" % self.details
+        if not self.reloaded:
+            status += ", policy NOT reloaded"
+        status += ", %d threads active, pid %d" % (self.threads, self.pid)
+        if self.details:
+            status += "\n%s" % self.details
         return status
 
 class ProcessAlgorithm(object):
@@ -324,21 +323,22 @@ class StatusAlgorithm(ProcessAlgorithm):
 
     def status(self):
         running = self.isRunning(self.instance.process_name)
+        if not running:
+            return CommandResultFailure("%s: %s" % (self.instance.process_name, running))
         status = ProcessStatus(self.instance.process_name, running)
-        if running:
-            status.pid = self.getProcessPid(self.instance.process_name)
-            try:
-                szig = SZIG(self.instance.process_name)
-                status.threads = int(szig.get_value('stats.threads_running'))
-                status.policy_file = szig.get_value('info.policy.file')
-                timestamp_szig = szig.get_value('info.policy.file_stamp')
-                status.reload_timestamp = szig.get_value('info.policy.reload_stamp')
-                timestamp_os = os.path.getmtime(status.policy_file)
-                status.reloaded = str(timestamp_szig) == str(timestamp_os).split('.')[0]
-            except IOError:
-                return CommandResultFailure(
-                        "Process %s: running, but error in socket communication" %
-                        self.instance.process_name)
+        status.pid = self.getProcessPid(self.instance.process_name)
+        try:
+            szig = SZIG(self.instance.process_name)
+            status.threads = int(szig.get_value('stats.threads_running'))
+            status.policy_file = szig.get_value('info.policy.file')
+            timestamp_szig = szig.get_value('info.policy.file_stamp')
+            status.reload_timestamp = szig.get_value('info.policy.reload_stamp')
+            timestamp_os = os.path.getmtime(status.policy_file)
+            status.reloaded = str(timestamp_szig) == str(timestamp_os).split('.')[0]
+        except IOError:
+            return CommandResultFailure(
+                    "Process %s: running, but error in socket communication" %
+                    self.instance.process_name)
 
         return status
 
