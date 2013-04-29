@@ -1,0 +1,28 @@
+[zorp_threads]
+user zorp
+group zorp
+
+[zorp_sessions_running]
+user zorp
+group zorp
+
+[zorp_thread_rate_avg15]
+user zorp
+group zorp
+
+[zorp_thread_rate_avg5]
+user zorp
+group zorp
+
+[zorp_thread_rate_avg1]
+user zorp
+group zorp
+
+[zorp_memory_rss]
+user zorp
+group zorp
+
+[zorp_memory_vsz]
+user zorp
+group zorp
+
