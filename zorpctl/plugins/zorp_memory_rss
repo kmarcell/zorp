@@ -1,0 +1,61 @@
+#!/usr/bin/env python
+# vim: ft=python
+"""
+=head1 NAME
+
+Zorp memory rss - Plugin to monitor the memory vsz of Zorp instances
+
+=head1 CONFIGURATION
+
+No configuration
+
+=head1 AUTHOR
+
+Marcell Kresz
+
+=head1 LICENSE
+
+GNU GPL
+
+=head1 MAGIC MARKERS
+
+ #%# family=auto
+ #%# capabilities=autoconf
+"""
+
+import sys
+
+from zorpctl.Munin import *
+from zorpctl.Instances import InstanceHandler
+
+if len(sys.argv) > 1:
+    if sys.argv[1] == "autoconf":
+        print("yes")
+
+    if sys.argv[1] == "config":
+        print('graph_title Memory rss')
+        print('graph_vlabel memory rss')
+        print('graph_category zorp')
+        print('graph_info This graph shows the memory rss of running instances in Zorp.')
+        for instance in RunningInstances():
+            print("%s.label %s" % (instance.name, instance.name))
+else:
+    """
+    Minus one return value indicates error!
+    """
+    for instance in RunningInstances():
+        results_of_memory_rss = InstanceHandler.executeAlgorithmOnInstanceProcesses(instance, GetMemoryRSSAlgorithm())
+        sum_of_memoryrss = 0
+        for memory_rss in results_of_memory_rss:
+            if memory_rss:
+                sum_of_memoryrss += memory_rss.value
+            else:
+                sum_of_memoryrss = None
+                break
+        algorithm = GetThreadsRunningAlgorithm()
+        algorithm.setInstance(instance)
+        threads = algorithm.run()
+        if threads and sum_of_memoryrss != None:
+            print("%s.value %d" % (instance.name, sum_of_memoryrss / threads.value))
+        else:
+            print("%s.value -1" % instance.name)
