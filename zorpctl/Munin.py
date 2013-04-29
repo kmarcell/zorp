@@ -1,6 +1,6 @@
 from zorpctl.szig import SZIG
-from zorpctl.ProcessAlgorithms import ProcessAlgorithm
-from zorpctl.CommandResults import CommandResultFailure
+from zorpctl.ProcessAlgorithms import ProcessAlgorithm, GetProcInfoAlgorithm
+from zorpctl.CommandResults import CommandResultFailure, CommandResultSuccess
 from zorpctl.InstancesConf import InstancesConf
 
 class RunningInstances(object):
@@ -37,7 +37,7 @@ class GetAlgorithm(ProcessAlgorithm):
             self.szig = SZIG(self.instance.process_name)
         except IOError as e:
             return CommandResultFailure(e.strerror)
-        return self.get()
+        return CommandResultSuccess("", self.get())
 
 class GetSessionsRunningAlgorithm(GetAlgorithm):
 
@@ -68,3 +68,22 @@ class GetThreadsRunningAlgorithm(GetAlgorithm):
     def get(self):
         result = self.szig.get_value('stats.threads_running')
         return int(result) if result else 0
+
+class GetMemoryRSSAlgorithm(ProcessAlgorithm):
+
+   def __init__(self):
+       super(GetMemoryRSSAlgorithm, self).__init__()
+
+   def get(self):
+       algorithm = GetProcInfoAlgorithm()
+       algorithm.setInstance(self.instance)
+       proc_info = algorithm.run()
+       if not proc_info:
+           return proc_info
+       return CommandResultSuccess("", int(proc_info["rss"]))
+
+   def execute(self):
+       running = self.isRunning(self.instance.process_name)
+       if not running:
+            return CommandResultFailure("%s: %s", (self.instance.process_name, running))
+       return self.get()

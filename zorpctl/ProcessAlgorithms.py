@@ -256,6 +256,39 @@ class LogLevelAlgorithm(ProcessAlgorithm):
                 return self.modifyloglevel(value - 1) if value else value
             return self.modifyloglevel(self.value)
 
+class GetProcInfoAlgorithm(ProcessAlgorithm):
+
+    def __init__(self):
+        super(GetProcInfoAlgorithm, self).__init__()
+
+    def getProcInfo(self):
+        pid = self.getProcessPid(self.instance.process_name)
+        try:
+            file = open("/proc/%s/stat" % pid, 'r')
+        except IOError:
+            return CommandResultFailure("Can not open /proc/%s/stat" % pid)
+
+        values = file.read().split()
+        file.close()
+        keys = ("pid", "comm", "state", "ppid", "pgrp", "session", "tty_nr",
+                "tpgid", "flags", "minflt", "cminflt", "majflt", "cmajflt",
+                "utime", "stime", "cutime", "cstime", "priority", "nice",
+                "_dummyzero", "itrealvalue", "starttime", "vsize", "rss",
+                "rlim", "startcode", "endcode", "startstack", "kstkesp",
+                "kstkeip", "signal", "blocked", "sigignore", "sigcatch",
+                "wchan", "nswap", "cnswap", "exit_signal", "processor")
+        proc_info = {}
+        for value, key in zip(values, keys):
+            proc_info[key] = value
+        return proc_info
+
+    def execute(self):
+        running = self.isRunning(self.instance.process_name)
+        if not running:
+            return CommandResultFailure("%s: %s" % (self.instance.process_name, running))
+        else:
+            return self.getProcInfo()
+
 class StatusAlgorithm(ProcessAlgorithm):
 
     DETAILED = True
@@ -301,25 +334,10 @@ class StatusAlgorithm(ProcessAlgorithm):
         jiffies_per_sec = int(round(5 + (idle_jiffies/idle_sec), -1))
         return jiffies_per_sec
 
-    def _getProcInfo(self, pid):
-        try:
-            file = open("/proc/%s/stat" % pid, 'r')
-        except IOError:
-            return CommandResultFailure("Can not open /proc/%s/stat" % pid)
-
-        values = file.read().split()
-        file.close()
-        keys = ("pid", "comm", "state", "ppid", "pgrp", "session", "tty_nr",
-                "tpgid", "flags", "minflt", "cminflt", "majflt", "cmajflt",
-                "utime", "stime", "cutime", "cstime", "priority", "nice",
-                "_dummyzero", "itrealvalue", "starttime", "vsize", "rss",
-                "rlim", "startcode", "endcode", "startstack", "kstkesp",
-                "kstkeip", "signal", "blocked", "sigignore", "sigcatch",
-                "wchan", "nswap", "cnswap", "exit_signal", "processor")
-        proc_info = {}
-        for value, key in zip(values, keys):
-            proc_info[key] = value
-        return proc_info
+    def _getProcInfo(self):
+        algorithm = GetProcInfoAlgorithm()
+        algorithm.setInstance(self.instance)
+        return algorithm.run()
 
     def status(self):
         running = self.isRunning(self.instance.process_name)
@@ -344,12 +362,12 @@ class StatusAlgorithm(ProcessAlgorithm):
 
     def detailedStatus(self):
         status = self.status()
-        if not status.running:
+        if not status:
             return status
         jps = self._getJiffiesPerSec()
         if not jps:
             return jps
-        proc_info = self._getProcInfo(status.pid)
+        proc_info = self._getProcInfo()
         if not proc_info:
             return proc_info
 

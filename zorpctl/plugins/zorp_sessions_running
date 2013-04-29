@@ -45,5 +45,15 @@ else:
     algorithm = GetSessionsRunningAlgorithm()
     for instance in RunningInstances():
         results = InstanceHandler.executeAlgorithmOnInstanceProcesses(instance, algorithm)
-        print("%s.value %d" % (instance.name, sum(results)))
+        sum_sessions = 0
+        for result in results:
+            if result:
+                sum_sessions += result.value
+            else:
+                sum_sessions = None
+                break
+        if sum_sessions != None:
+            print("%s.value %d" % (instance.name, sum_sessions))
+        else:
+            print("%s.value -1" % (instance.name))
 

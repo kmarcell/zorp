@@ -43,7 +43,14 @@ else:
     algorithm = GetThreadRateAlgorithm()
     for instance in RunningInstances():
         results = InstanceHandler.executeAlgorithmOnInstanceProcesses(instance, algorithm)
+        sum_avg1 = 0
         for result in results:
-            sum_avg1 = result["avg1"] / len(results)
-        print("%s.value %d" % (instance.name, sum_avg1))
-
+            if result:
+                sum_avg1 += result.value["avg1"]
+            else:
+                sum_avg1 = None
+                break
+        if sum_avg1 != None:
+            print("%s.value %d" % (instance.name, sum_avg1 / len(results)))
+        else:
+            print("%s.value -1" % instance.name) #indicates error

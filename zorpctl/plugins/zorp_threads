@@ -38,9 +38,19 @@ if len(sys.argv) > 1:
         print('graph_category zorp')
         print('graph_info This graph shows the sum of running threads in Zorp.')
         for instance in RunningInstances():
-            print "%s.label %s" % (instance.name, instance.name)
+            print("%s.label %s" % (instance.name, instance.name))
 else:
     algorithm = GetThreadsRunningAlgorithm()
     for instance in RunningInstances():
         results = InstanceHandler.executeAlgorithmOnInstanceProcesses(instance, algorithm)
-        print("%s.value %d" % (instance.name, sum(results)))
+        sum_threads = 0
+        for result in results:
+            if result:
+                sum_threads += result.value
+            else:
+                sum_threads = None
+                break
+        if sum_threads != None:
+            print("%s.value %d" % (instance.name, sum_threads))
+        else:
+            print("%s.value -1" % (instance.name))
