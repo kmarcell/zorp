@@ -78,12 +78,13 @@ class StartAlgorithm(ProcessAlgorithm):
     def isValidInstanceForStart(self):
         if self.isRunning(self.instance.process_name):
             return CommandResultFailure("Process %s: is already running" % self.instance.process_name)
-        if not self.instance.auto_start and not self.force:
-            return CommandResultFailure("Process %s: has no-auto-start" % self.instance.process_name)
         if not 0 <= self.instance.process_num < self.instance.number_of_processes:
-            return CommandResultFailure("Process %s: number %d must be between 0 and %d"
+            return CommandResultFailure("%s: number %d must be between [0..%d)"
                                         % (self.instance.process_name,
                                            self.instance.process_num, self.instance.number_of_processes))
+        if not self.instance.auto_start and not self.force:
+            return CommandResultFailure("%s: not started, because no-auto-start is set" % self.instance.process_name)
+
         return CommandResultSuccess()
 
     def assembleStartCommand(self):
@@ -107,8 +108,6 @@ class StartAlgorithm(ProcessAlgorithm):
         valid = self.isValidInstanceForStart()
         if not valid:
             return valid
-        if not self.instance.auto_start and not self.force:
-            return CommandResultFailure("%s: not started, because no-auto-start is set")
         args = self.assembleStartCommand()
         try:
             subprocess.Popen(args, stderr=open("/dev/null", 'w'))
@@ -191,20 +190,17 @@ class DeadlockCheckAlgorithm(ProcessAlgorithm):
         super(DeadlockCheckAlgorithm, self).__init__()
 
     def getDeadlockcheck(self):
-        running = self.isRunning(self.instance.process_name)
-        if not running:
-            return CommandResultFailure(str(running), self.instance.process_name)
         return "Instance: %s: deadlockcheck=%s" % (self.instance.process_name,
                                                    self.szig.deadlockcheck)
 
     def setDeadlockcheck(self, value):
-        running = self.isRunning(self.instance.process_name)
-        if not running:
-            return CommandResultFailure(str(running), self.instance.process_name)
         self.szig.deadlockcheck = value
         return CommandResultSuccess(self.instance.process_name)
 
     def execute(self):
+        running = self.isRunning(self.instance.process_name)
+        if not running:
+            return CommandResultFailure("%s: %s" % (self.instance.process_name, running))
         try:
             self.szig = SZIG(self.instance.process_name)
         except IOError as e:
@@ -224,16 +220,10 @@ class LogLevelAlgorithm(ProcessAlgorithm):
         super(LogLevelAlgorithm, self).__init__()
 
     def modifyloglevel(self, value):
-        running = self.isRunning(self.instance.process_name)
-        if not running:
-            return CommandResultFailure(str(running), self.instance.process_name)
         self.szig.loglevel = value
         return CommandResultSuccess(self.instance.process_name)
 
     def getloglevel(self):
-        running = self.isRunning(self.instance.process_name)
-        if not running:
-            return CommandResultFailure(str(running), self.instance.process_name)
         return CommandResultSuccess("Instance: %s: verbose_level=%d, logspec='%s'" %
                                     (self.instance.process_name, self.szig.loglevel,
                                      self.szig.logspec), self.szig.loglevel)
@@ -241,7 +231,7 @@ class LogLevelAlgorithm(ProcessAlgorithm):
     def execute(self):
         running = self.isRunning(self.instance.process_name)
         if not running:
-            return running
+            return CommandResultFailure("%s: %s" % (self.instance.process_name, running))
         try:
             self.szig = SZIG(self.instance.process_name)
         except IOError as e:
@@ -340,9 +330,6 @@ class StatusAlgorithm(ProcessAlgorithm):
         return algorithm.run()
 
     def status(self):
-        running = self.isRunning(self.instance.process_name)
-        if not running:
-            return CommandResultFailure("%s: %s" % (self.instance.process_name, running))
         status = ProcessStatus(self.instance.process_name, running)
         status.pid = self.getProcessPid(self.instance.process_name)
         try:
@@ -409,6 +396,9 @@ class StatusAlgorithm(ProcessAlgorithm):
         return status
 
     def execute(self):
+        running = self.isRunning(self.instance.process_name)
+        if not running:
+            return CommandResultFailure("%s: %s" % (self.instance.process_name, running))
         if self.detailed:
             return self.detailedStatus()
         else:
@@ -428,6 +418,9 @@ class CoredumpAlgorithm(ProcessAlgorithm):
         return CommandResultSuccess("Instance:%s dumped core")
 
     def execute(self):
+        running = self.isRunning(self.instance.process_name)
+        if not running:
+            return CommandResultFailure("%s: %s" % (self.instance.process_name, running))
         return self.coredump()
 
 class SzigWalkAlgorithm(ProcessAlgorithm):
@@ -437,7 +430,6 @@ class SzigWalkAlgorithm(ProcessAlgorithm):
         super(SzigWalkAlgorithm, self).__init__()
 
     def getChilds(self, node):
-        #import pdb; pdb.set_trace()
         child = self.szig.get_child(node)
         if child:
             result = {}
@@ -460,7 +452,7 @@ class SzigWalkAlgorithm(ProcessAlgorithm):
     def execute(self):
         running = self.isRunning(self.instance.process_name)
         if not running:
-            return running
+            return CommandResultFailure("%s: %s" % (self.instance.process_name, running))
         try:
             self.szig = SZIG(self.instance.process_name)
         except IOError as e:
@@ -487,7 +479,7 @@ class AuthorizeAlgorithm(ProcessAlgorithm):
     def execute(self):
         running = self.isRunning(self.instance.process_name)
         if not running:
-            return running
+            return CommandResultFailure("%s: %s" % (self.instance.process_name, running))
         try:
             self.szig = SZIG(self.instance.process_name)
         except IOError as e:

@@ -5,7 +5,6 @@ class InstancesConf(object):
     def __init__(self):
         self.prefix = "" #TODO: @PREFIX@
         self.instances_conf_path = self.prefix + "/etc/zorp/instances.conf"
-        self.instances_conf_file = None
         self.instances_conf_file = open(self.instances_conf_path, 'r')
 
     def __del__(self):
