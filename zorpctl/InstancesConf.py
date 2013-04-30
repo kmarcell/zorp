@@ -30,7 +30,7 @@ class InstancesConf(object):
     def _parseZorpctlArgs(self, zorpctl_argv):
         parser = argparse.ArgumentParser()
         parser.add_argument('--num-of-processes', type=int,
-                            dest='number_of_processes', default=None
+                            dest='number_of_processes', default=1
                             )
         parser.add_argument('--auto-restart', dest='auto_restart',
                             action='store_true', default=None
@@ -49,12 +49,12 @@ class InstancesConf(object):
 
     def _createInstance(self, line):
         params = {}
-        zorp_argv, zorpctl_argv = line.split(' -- ')
-        #FIXME: is there ' -- ' when does not have zorpctl args ?
+        splitted_line = line.split(' -- ')
+        zorp_argv = splitted_line[0]
         params['name'] = zorp_argv.split()[0]
         params['zorp_argv'] = zorp_argv
 
-        if zorpctl_argv:
-            params.update(self._parseZorpctlArgs(zorpctl_argv))
+        if len(splitted_line) > 1:
+            params.update(self._parseZorpctlArgs(splitted_line[1]))
 
         return Instance(**params)

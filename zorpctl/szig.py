@@ -1,5 +1,5 @@
 import socket
-from SZIGMessages import (
+from zorpctl.SZIGMessages import (
         MessageAuthorizeAccept, MessageAuthorizeReject,
         MessageCoredump, MessageGetChild,
         MessageGetDeadLockCheck, MessageGetLogLevel,
