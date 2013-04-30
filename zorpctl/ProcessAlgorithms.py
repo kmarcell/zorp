@@ -76,8 +76,6 @@ class StartAlgorithm(ProcessAlgorithm):
         super(StartAlgorithm, self).__init__()
 
     def isValidInstanceForStart(self):
-        if self.isRunning(self.instance.process_name):
-            return CommandResultFailure("Process %s: is already running" % self.instance.process_name)
         if not 0 <= self.instance.process_num < self.instance.number_of_processes:
             return CommandResultFailure("%s: number %d must be between [0..%d)"
                                         % (self.instance.process_name,
@@ -105,9 +103,6 @@ class StartAlgorithm(ProcessAlgorithm):
             t += 1
 
     def start(self):
-        valid = self.isValidInstanceForStart()
-        if not valid:
-            return valid
         args = self.assembleStartCommand()
         try:
             subprocess.Popen(args, stderr=open("/dev/null", 'w'))
@@ -115,12 +110,18 @@ class StartAlgorithm(ProcessAlgorithm):
             pass
         self.waitTilTimoutToStart()
 
-        running = self.isRunning(self.instance.process_name)
-        return "%s: %s" % (self.instance.process_name, running) if running else CommandResultFailure(
-                                        "%s: did not start in time" % self.instance.process_name)
-
     def execute(self):
-        return self.start()
+        if self.isRunning(self.instance.process_name):
+            return CommandResultFailure("Process %s: is already running" % self.instance.process_name)
+        valid = self.isValidInstanceForStart()
+        if not valid:
+            return valid
+        self.start()
+        running = self.isRunning(self.instance.process_name)
+        if running:
+            return CommandResultSuccess("%s: %s" % (self.instance.process_name, running))
+        else:
+            return  CommandResultFailure("%s: did not start in time" % self.instance.process_name)
 
 class StopAlgorithm(ProcessAlgorithm):
 
@@ -134,28 +135,32 @@ class StopAlgorithm(ProcessAlgorithm):
             time.sleep(1)
             t += 1
 
-    def stop(self):
-        running = self.isRunning(self.instance.process_name)
-        if not running:
-            return CommandResultFailure("%s: %s" % (self.instance.process_name, str(running)))
-
-        pid = self.getProcessPid(self.instance.process_name)
+    def killProcess(self, pid):
         sig = signal.SIGKILL if self.force else signal.SIGTERM
         try:
             os.kill(pid, sig)
+            return CommandResultSuccess()
         except OSError as e:
             return CommandResultFailure("%s: %s" % (self.instance.process_name, e.strerror))
-        self.waitTilTimeoutToStop()
 
+    def stop(self):
+        pid = self.getProcessPid(self.instance.process_name)
+        isKilled = self.killProcess(pid)
+        if not isKilled:
+            return isKilled
+
+        self.waitTilTimeoutToStop()
         if self.isRunning(self.instance.process_name):
             return CommandResultFailure(
                     "%s: did not exit in time (pid='%d', signo='%d', timeout='%d')" %
                     (self.instance.process_name, pid, sig, self.stop_timout))
         else:
-            result = CommandResultSuccess("%s: stopped" % self.instance.process_name)
-            return result
+            return CommandResultSuccess("%s: stopped" % self.instance.process_name)
 
     def execute(self):
+        running = self.isRunning(self.instance.process_name)
+        if not running:
+            return CommandResultFailure("%s: %s" % (self.instance.process_name, running))
         return self.stop()
 
 class ReloadAlgorithm(ProcessAlgorithm):
@@ -164,10 +169,6 @@ class ReloadAlgorithm(ProcessAlgorithm):
         super(ReloadAlgorithm, self).__init__()
 
     def reload(self):
-        running = self.isRunning(self.instance.process_name)
-        if not running:
-            return CommandResultFailure("%s: %s" % (self.instance.process_name, running),
-                                        self.instance.process_name)
         try:
             szig = SZIG(self.instance.process_name)
             szig.reload()
@@ -181,6 +182,10 @@ class ReloadAlgorithm(ProcessAlgorithm):
         return result
 
     def execute(self):
+        running = self.isRunning(self.instance.process_name)
+        if not running:
+            return CommandResultFailure("%s: %s" % (self.instance.process_name, running),
+                                        self.instance.process_name)
         return self.reload()
 
 class DeadlockCheckAlgorithm(ProcessAlgorithm):
