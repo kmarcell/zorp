@@ -30,9 +30,6 @@ class GetAlgorithm(ProcessAlgorithm):
         raise NotImplementedError()
 
     def execute(self):
-        running = self.isRunning(self.instance.process_name)
-        if not running:
-            return CommandResultFailure("%s: %s", (self.instance.process_name, running))
         try:
             self.szig = SZIG(self.instance.process_name)
         except IOError as e:
@@ -71,38 +68,75 @@ class GetThreadsRunningAlgorithm(GetAlgorithm):
 
 class GetMemoryRSSAlgorithm(ProcessAlgorithm):
 
-   def __init__(self):
-       super(GetMemoryRSSAlgorithm, self).__init__()
+    def __init__(self):
+        super(GetMemoryRSSAlgorithm, self).__init__()
 
-   def get(self):
-       algorithm = GetProcInfoAlgorithm()
-       algorithm.setInstance(self.instance)
-       proc_info = algorithm.run()
-       if not proc_info:
-           return proc_info
-       return CommandResultSuccess("", int(proc_info["rss"]))
+    def get(self):
+        algorithm = GetProcInfoAlgorithm()
+        algorithm.setInstance(self.instance)
+        proc_info = algorithm.run()
+        if not proc_info:
+            return proc_info
+        return CommandResultSuccess("", int(proc_info["rss"]))
 
-   def execute(self):
-       running = self.isRunning(self.instance.process_name)
-       if not running:
-            return CommandResultFailure("%s: %s", (self.instance.process_name, running))
-       return self.get()
+    def execute(self):
+        return self.get()
 
 class GetMemoryVSZAlgorithm(ProcessAlgorithm):
 
-   def __init__(self):
-       super(GetMemoryVSZAlgorithm, self).__init__()
+    def __init__(self):
+        super(GetMemoryVSZAlgorithm, self).__init__()
+ 
+    def get(self):
+        algorithm = GetProcInfoAlgorithm()
+        algorithm.setInstance(self.instance)
+        proc_info = algorithm.run()
+        if not proc_info:
+            return proc_info
+        return CommandResultSuccess("", int(proc_info["vsize"]))
+ 
+    def execute(self):
+        return self.get()
+ 
+class GetServicesAlgorithm(ProcessAlgorithm):
 
-   def get(self):
-       algorithm = GetProcInfoAlgorithm()
-       algorithm.setInstance(self.instance)
-       proc_info = algorithm.run()
-       if not proc_info:
-           return proc_info
-       return CommandResultSuccess("", int(proc_info["vsize"]))
+    def __init__(self):
+        super(GetServicesAlgorithm, self).__init__()
 
-   def execute(self):
-       running = self.isRunning(self.instance.process_name)
-       if not running:
-            return CommandResultFailure("%s: %s", (self.instance.process_name, running))
-       return self.get()
+    def services(self):
+        services = []
+        service = self.szig.get_child("service")
+        while service:
+            services.append(service)
+            service = self.szig.get_sibling(service)
+        return CommandResultSuccess("", services)
+
+    def execute(self):
+        try:
+            self.szig = SZIG(self.instance.process_name)
+        except IOError as e:
+            return CommandResultFailure(e.strerror)
+        try:
+            return self.services() 
+        except SZIGError as e:
+            return CommandResultFailure("error while communicating through szig: %s" % e.msg)
+
+class GetServiceRateAlgorithm(GetAlgorithm):
+
+    def __init__(self):
+        super(GetServiceRateAlgorithm, self).__init__()
+
+    def get(self):
+        avg = {}
+        algorithm = GetServicesAlgorithm()
+        algorithm.setInstance(self.instance)
+        services = algorithm.run()
+        if not services:
+            return services
+        for service in services.value:
+            avg1 = int(self.szig.get_value("service." + service + ".rate_avg1"))
+            avg5 = int(self.szig.get_value("service." + service + ".rate_avg5"))
+            avg15 = int(self.szig.get_value("service." + service + ".rate_avg15"))
+            avg[service] = {"avg1" : avg1, "avg5" : avg5, "avg15" : avg15}
+
+        return avg
