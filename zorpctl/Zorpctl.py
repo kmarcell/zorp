@@ -11,7 +11,8 @@ from zorpctl.InstanceClass import Instance
 from zorpctl.ProcessAlgorithms import (StartAlgorithm, StopAlgorithm,
                                 LogLevelAlgorithm , DeadlockCheckAlgorithm,
                                 StatusAlgorithm, ReloadAlgorithm,
-                                CoredumpAlgorithm, SzigWalkAlgorithm)
+                                CoredumpAlgorithm, SzigWalkAlgorithm,
+                                DetailedStatusAlgorithm)
 
 #TODO: Logging
 """
@@ -36,7 +37,9 @@ class Zorpctl(object):
             #number can be 0 which is false too
             instance.process_num = number
             algorithm.setInstance(instance)
-            return algorithm.run()
+            result = algorithm.run()
+            result.msg = "%s: %s" % (instance.process_name, result.msg)
+            return result
         else:
             return InstanceHandler.executeAlgorithmOnInstanceProcesses(instance, algorithm)
 
@@ -209,7 +212,7 @@ class Zorpctl(object):
         if not s_args.listofinstances:
             UInterface.informUser(ZorpHandler.detailedStatus() if s_args.verbose else ZorpHandler.status())
         else:
-            algorithm = StatusAlgorithm(StatusAlgorithm.DETAILED) if s_args.verbose else StatusAlgorithm()
+            algorithm = DetailedStatusAlgorithm() if s_args.verbose else StatusAlgorithm()
             Zorpctl.runAlgorithmOnList(s_args.listofinstances, algorithm)
 
     @staticmethod
@@ -345,7 +348,7 @@ HelpMessage = (
 'inclog' + '\t\t  Raise the specified Zorp instance(s) log level by one\n' +
 'declog' + '\t\t  Lower the specified Zorp instance(s) log level by one\n' +
 'log' + '\t\t  Change and query Zorp log settings\n' +
-'deadlockchek' + '\t  Change and query Zorp deadlock checking settings\n' +
+'deadlockcheck' + '\t  Change and query Zorp deadlock checking settings\n' +
 'szig' + '\t\t  Display internal information from the given Zorp instance(s)'
 )
 

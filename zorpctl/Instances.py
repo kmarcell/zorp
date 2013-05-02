@@ -2,7 +2,7 @@ from zorpctl.InstancesConf import InstancesConf
 from zorpctl.ProcessAlgorithms import (StartAlgorithm, StopAlgorithm,
                                 LogLevelAlgorithm , DeadlockCheckAlgorithm,
                                 StatusAlgorithm, ReloadAlgorithm, CoredumpAlgorithm,
-                                SzigWalkAlgorithm)
+                                SzigWalkAlgorithm, DetailedStatusAlgorithm)
 from zorpctl.CommandResults import CommandResultFailure
 
 class ZorpHandler(object):
@@ -37,7 +37,7 @@ class ZorpHandler(object):
 
     @staticmethod
     def detailedStatus():
-        return ZorpHandler.callAlgorithmToAllInstances(StatusAlgorithm(StatusAlgorithm.DETAILED))
+        return ZorpHandler.callAlgorithmToAllInstances(DetailedStatusAlgorithm())
 
     @staticmethod
     def inclog():
@@ -77,13 +77,15 @@ class InstanceHandler(object):
 
     @staticmethod
     def executeAlgorithmOnInstanceProcesses(instance, algorithm):
-        result = []
+        results = []
         for i in range(0, instance.number_of_processes):
             instance.process_num = i
             algorithm.setInstance(instance)
-            result.append(algorithm.run())
+            result = algorithm.run()
+            result.msg = "%s: %s" % (instance.process_name, result.msg)
+            results.append(result)
 
-        return result
+        return results
 
     @staticmethod
     def searchInstance(instance_name):

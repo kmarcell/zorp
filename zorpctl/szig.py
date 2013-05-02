@@ -119,11 +119,7 @@ class SZIG(object):
     def __init__(self, process_name):
         self.prefix = "" #TODO: @PREFIX@
         self.pidfile_dir = self.prefix + "/var/run/zorp/"
-        try:
-            self.handler = Handler(self.pidfile_dir + 'zorpctl.' + process_name)
-        except IOError as e:
-            e.strerror = process_name + " " + e.strerror
-            raise
+        self.handler = Handler(self.pidfile_dir + 'zorpctl.' + process_name)
 
     def get_value(self, key):
         response = self.handler.talk(MessageGetValue(key))

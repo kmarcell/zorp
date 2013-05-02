@@ -8,6 +8,6 @@ class UInterface(object):
     def informUser(message):
         if zorpctl.utils.isSequence(message):
             for msg in message:
-                print(msg)
+                print(str(msg))
         else:
-            print(message)
+            print(str(message))
