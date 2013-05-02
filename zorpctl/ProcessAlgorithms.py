@@ -206,7 +206,10 @@ class ReloadAlgorithm(ProcessAlgorithm):
             error.value = self.instance.process_name
             return error
 
-        reloaded = self.reload()
+        try:
+            reloaded = self.reload()
+        except SZIGError as e:
+            reloaded = CommandResultFailure("error while communicating through szig: %s" % e.msg)
         if not reloaded:
             reloaded.value = self.instance.process_name
         return reloaded
@@ -238,10 +241,13 @@ class DeadlockCheckAlgorithm(ProcessAlgorithm):
         if error != None:
             return error
 
-        if self.value != None:
-            return self.setDeadlockcheck(self.value)
-        else:
-            return self.getDeadlockcheck()
+        try:
+            if self.value != None:
+                return self.setDeadlockcheck(self.value)
+            else:
+                return self.getDeadlockcheck()
+        except SZIGError as e:
+            return CommandResultFailure("error while communicating through szig: %s" % e.msg)
 
 class LogLevelAlgorithm(ProcessAlgorithm):
 
@@ -275,15 +281,18 @@ class LogLevelAlgorithm(ProcessAlgorithm):
         if error != None:
             return error
 
-        if not self.value:
-            return self.getloglevel()
-        else:
-            value = self.getloglevel().value
-            if self.value == "I":
-                return self.modifyloglevel(value + 1) if value else value
-            if self.value == "D":
-                return self.modifyloglevel(value - 1) if value else value
-            return self.modifyloglevel(self.value)
+        try:
+            if not self.value:
+                return self.getloglevel()
+            else:
+                value = self.getloglevel().value
+                if self.value == "I":
+                    return self.modifyloglevel(value + 1) if value else value
+                if self.value == "D":
+                    return self.modifyloglevel(value - 1) if value else value
+                return self.modifyloglevel(self.value)
+        except SZIGError as e:
+            return CommandResultFailure("error while communicating through szig: %s" % e.msg)
 
 class GetProcInfoAlgorithm(ProcessAlgorithm):
 
@@ -354,7 +363,10 @@ class StatusAlgorithm(ProcessAlgorithm):
         if error != None:
             return error
 
-        return self.status()
+        try:
+            return self.status()
+        except SZIGError as e:
+            return CommandResultFailure("error while communicating through szig: %s" % e.msg)
 
 class DetailedStatusAlgorithm(ProcessAlgorithm):
 
@@ -482,7 +494,10 @@ class CoredumpAlgorithm(ProcessAlgorithm):
         if error != None:
             return error
 
-        return self.coredump()
+        try:
+            return self.coredump()
+        except SZIGError as e:
+            return CommandResultFailure("error while communicating through szig: %s" % e.msg)
 
 class SzigWalkAlgorithm(ProcessAlgorithm):
 
@@ -525,8 +540,11 @@ class SzigWalkAlgorithm(ProcessAlgorithm):
         if error != None:
             return error
 
-        return CommandResultSuccess("",
-            {self.root if self.root else self.instance.process_name : self.walk(self.root)})
+        try:
+            return CommandResultSuccess("",
+                {self.root if self.root else self.instance.process_name : self.walk(self.root)})
+        except SZIGError as e:
+            return CommandResultFailure("error while communicating through szig: %s" % e.msg)
 
 class AuthorizeAlgorithm(ProcessAlgorithm):
 
@@ -536,7 +554,7 @@ class AuthorizeAlgorithm(ProcessAlgorithm):
     def __init__(self, accept, description):
         self.accept = accept
         self.description = description
-        super(SzigWalkAlgorithm, self).__init__()
+        super(AuthorizeAlgorithm, self).__init__()
 
     def errorHandling(self):
         running = self.isRunning(self.instance.process_name)
@@ -559,7 +577,10 @@ class AuthorizeAlgorithm(ProcessAlgorithm):
         if error != None:
             return error
 
-        if self.accept:
-            self.accept()
-        else:
-            self.reject()
+        try:
+            if self.accept:
+                self.accept()
+            else:
+                self.reject()
+        except SZIGError as e:
+            return CommandResultFailure("error while communicating through szig: %s" % e.msg)
