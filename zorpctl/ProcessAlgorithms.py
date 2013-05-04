@@ -519,10 +519,10 @@ class SzigWalkAlgorithm(ProcessAlgorithm):
         child = self.szig.get_child(node)
         if child:
             result = {}
-            result[child] = self.walk(child)
+            result[child.split('.')[-1]] = self.walk(child)
             sibling = self.szig.get_sibling(child)
             while sibling:
-                result[sibling] = self.walk(sibling)
+                result[sibling.split('.')[-1]] = self.walk(sibling)
                 sibling = self.szig.get_sibling(sibling)
             return result
         else:
@@ -530,7 +530,7 @@ class SzigWalkAlgorithm(ProcessAlgorithm):
 
     def walk(self, node):
         value = self.szig.get_value(node)
-        if value:
+        if value != None:
             return value
         else:
             return self.getChilds(node)
