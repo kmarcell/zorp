@@ -42,7 +42,7 @@ if len(sys.argv) > 1:
             results = InstanceHandler.executeAlgorithmOnInstanceProcesses(instance, GetServicesAlgorithm())
             for result in results:
                 if result:
-                    for service in result.value.keys():
+                    for service in result.value:
                         services[service] = None
         for service in services.keys():
             print("%s.label %s" % (service, service))

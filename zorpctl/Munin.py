@@ -107,7 +107,7 @@ class GetServicesAlgorithm(ProcessAlgorithm):
         services = []
         service = self.szig.get_child("service")
         while service:
-            services.append(service)
+            services.append(service[len("service."):])
             service = self.szig.get_sibling(service)
         return CommandResultSuccess("", services)
 
