@@ -29,7 +29,7 @@ class InstancesConf(object):
 
     def _parseZorpctlArgs(self, zorpctl_argv):
         parser = argparse.ArgumentParser()
-        parser.add_argument('--num-of-processes', type=int,
+        parser.add_argument('--parallel-instances', type=int,
                             dest='number_of_processes', default=1
                             )
         parser.add_argument('--auto-restart', dest='auto_restart',
