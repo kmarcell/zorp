@@ -234,7 +234,7 @@ class DeadlockCheckAlgorithm(ProcessAlgorithm):
 
     def setDeadlockcheck(self, value):
         self.szig.deadlockcheck = value
-        return CommandResultSuccess(self.instance.process_name)
+        return CommandResultSuccess()
 
     def execute(self):
         error = self.errorHandling()
@@ -269,7 +269,7 @@ class LogLevelAlgorithm(ProcessAlgorithm):
 
     def modifyloglevel(self, value):
         self.szig.loglevel = value
-        return CommandResultSuccess(self.instance.process_name)
+        return CommandResultSuccess()
 
     def getloglevel(self):
         return CommandResultSuccess("verbose_level=%d, logspec='%s'" %
@@ -351,10 +351,10 @@ class StatusAlgorithm(ProcessAlgorithm):
 
         status.threads = int(self.szig.get_value('stats.threads_running'))
         status.policy_file = self.szig.get_value('info.policy.file')
-        timestamp_szig = self.szig.get_value('info.policy.file_stamp')
+        status.timestamp_szig = self.szig.get_value('info.policy.file_stamp')
         status.reload_timestamp = self.szig.get_value('info.policy.reload_stamp')
         timestamp_os = os.path.getmtime(status.policy_file)
-        status.reloaded = str(timestamp_szig) == str(timestamp_os).split('.')[0]
+        status.reloaded = str(status.timestamp_szig) == str(timestamp_os).split('.')[0]
 
         return status
 
@@ -372,20 +372,22 @@ class DetailedStatusAlgorithm(ProcessAlgorithm):
 
     def __init__(self):
         super(DetailedStatusAlgorithm, self).__init__()
+        self.uptime_filename = '/proc/uptime'
+        self.proc_stat_filename = '/proc/stat'
 
     def errorHandling(self):
         running = self.isRunning(self.instance.process_name)
         if not running:
             return running
         try:
-            self.stat_file = open('/proc/stat', 'r')
+            self.stat_file = open(self.proc_stat_filename, 'r')
         except IOError:
-            return CommandResultFailure("Can not open /proc/stat")
+            return CommandResultFailure("Can not open %s" % self.proc_stat_filename)
         try:
-            uptime_file = open('/proc/uptime', 'r')
+            uptime_file = open(self.uptime_filename, 'r')
             uptime_file.close()
         except IOError:
-            return CommandResultFailure("Can not open /proc/uptime")
+            return CommandResultFailure("Can not open %s" % self.uptime_filename)
 
     def _getIdleJiffies(self):
         for buf in self.stat_file:
@@ -396,13 +398,13 @@ class DetailedStatusAlgorithm(ProcessAlgorithm):
         return idle_jiffies
 
     def _getIdleSec(self):
-        uptime_file = open('/proc/uptime', 'r')
+        uptime_file = open(self.uptime_filename, 'r')
         idle_sec = float(uptime_file.readline().split()[1])
         uptime_file.close()
 
         return idle_sec
 
-    def _getJiffiesPerSec(self):
+    def getJiffiesPerSec(self):
         idle_jiffies = self._getIdleJiffies()
         idle_sec = self._getIdleSec()
 
@@ -433,7 +435,7 @@ class DetailedStatusAlgorithm(ProcessAlgorithm):
         return (realmin, realtime, usermin, usertime, sysmin, systime)
 
     def _getStartTime(self, proc_info, jps):
-        uptime_file = open('/proc/uptime', 'r')
+        uptime_file = open(self.uptime_filename, 'r')
         uptime_float = float(uptime_file.readline().split()[0])
         uptime_file.close()
         uptime = datetime.datetime.fromtimestamp(uptime_float)
@@ -445,18 +447,23 @@ class DetailedStatusAlgorithm(ProcessAlgorithm):
                              datetime.datetime.fromtimestamp(0)))
         return starttime
 
+    def assembleDetails(self, status, proc_info, jps):
+        details = "started at: %s\n" % self._getStartTime(proc_info, jps)
+        details += "policy: file=%s, loaded=%s\n" % (status.policy_file, self._getLoaded(status.reload_timestamp))
+        details += "cpu: real=%d:%f, user=%d:%f, sys=%d:%f\n" % self._getTimes(proc_info, jps)
+        details += "memory: vsz=%s, rss=%s" % (int(proc_info["vsize"])/1024, int(proc_info["rss"])*4)
+
+        return details
+
     def detailedStatus(self):
         statusalgorithm = StatusAlgorithm()
         statusalgorithm.setInstance(self.instance)
         status = statusalgorithm.run()
 
-        jps = self._getJiffiesPerSec()
+        jps = self.getJiffiesPerSec()
         proc_info = self._getProcInfo()
 
-        status.details = "started at: %s\n" % self._getStartTime(proc_info, jps)
-        status.details += "policy: file=%s, loaded=%s\n" % (status.policy_file, self._getLoaded(status.reload_timestamp))
-        status.details += "cpu: real=%d:%f, user=%d:%f, sys=%d:%f\n" % self._getTimes(proc_info, jps)
-        status.details += "memory: vsz=%s, rss=%s" % (int(proc_info["vsize"])/1024, int(proc_info["rss"])*4)
+        status.details = self.assembleDetails(status, proc_info, jps)
 
         return status
 

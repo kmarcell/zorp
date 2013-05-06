@@ -1,4 +1,4 @@
-from zorpctl.szig import SZIG
+from zorpctl.szig import SZIG, SZIGError
 from zorpctl.ProcessAlgorithms import ProcessAlgorithm, GetProcInfoAlgorithm
 from zorpctl.CommandResults import CommandResultFailure, CommandResultSuccess
 from zorpctl.InstancesConf import InstancesConf
@@ -126,17 +126,20 @@ class GetServiceRateAlgorithm(GetAlgorithm):
     def __init__(self):
         super(GetServiceRateAlgorithm, self).__init__()
 
-    def get(self):
+    def getServiceRate(self, services):
         avg = {}
-        algorithm = GetServicesAlgorithm()
-        algorithm.setInstance(self.instance)
-        services = algorithm.run()
-        if not services:
-            return services
         for service in services.value:
             avg1 = int(self.szig.get_value("service." + service + ".rate_avg1"))
             avg5 = int(self.szig.get_value("service." + service + ".rate_avg5"))
             avg15 = int(self.szig.get_value("service." + service + ".rate_avg15"))
             avg[service] = {"avg1" : avg1, "avg5" : avg5, "avg15" : avg15}
-
         return avg
+
+    def get(self):
+        algorithm = GetServicesAlgorithm()
+        algorithm.setInstance(self.instance)
+        services = algorithm.run()
+        if not services:
+            return services
+
+        return self.getServiceRate(services)
