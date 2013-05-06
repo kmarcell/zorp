@@ -1,6 +1,7 @@
 import unittest
-from test_szig import HandlerMock
+from HandlerMock import HandlerMock
 from zorpctl.szig import SZIG
+from zorpctl.ProcessAlgorithms import SzigWalkAlgorithm
 
 class TestSzigWalkAlgorithm(unittest.TestCase):
 
