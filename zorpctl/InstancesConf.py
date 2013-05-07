@@ -5,7 +5,12 @@ class InstancesConf(object):
     def __init__(self):
         self.prefix = "" #TODO: @PREFIX@
         self.instances_conf_path = self.prefix + "/etc/zorp/instances.conf"
-        self.instances_conf_file = open(self.instances_conf_path, 'r')
+        try:
+            self.instances_conf_file = open(self.instances_conf_path, 'r')
+        except IOError as e:
+            self.instances_conf_file = None
+            e.strerror = "%s %s" % (self.instances_conf_path, e.strerror)
+            raise e
 
     def __del__(self):
         if self.instances_conf_file:
