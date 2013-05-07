@@ -29,7 +29,7 @@ class Zorpctl(object):
         try:
             name, number = Instance.splitInstanceName(instance_name)
         except ValueError:
-            return "Instance: %s NOT RECOGNIZED!" % instance_name
+            return "Instance: %s not recognized!" % instance_name
         instance = InstanceHandler.searchInstance(name)
         if not instance:
             return instance
