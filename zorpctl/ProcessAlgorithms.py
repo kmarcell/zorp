@@ -94,7 +94,7 @@ class StartAlgorithm(ProcessAlgorithm):
         return CommandResultSuccess()
 
     def assembleStartCommand(self):
-        command = [self.install_path + "zorp", "--as"]
+        command = [self.install_path + "zorp", "--as", self.instance.name]
         command += self.instance.zorp_argv.split()
         command.append("--slave" if self.instance.process_num else "--master")
         command.append(self.instance.process_name)

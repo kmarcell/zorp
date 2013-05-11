@@ -57,7 +57,7 @@ class InstancesConf(object):
         splitted_line = line.split(' -- ')
         zorp_argv = splitted_line[0]
         params['name'] = zorp_argv.split()[0]
-        params['zorp_argv'] = zorp_argv
+        params['zorp_argv'] = " ".join(zorp_argv.split()[1:])
 
         if len(splitted_line) > 1:
             params.update(self._parseZorpctlArgs(splitted_line[1]))
