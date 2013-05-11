@@ -2,6 +2,7 @@ from zorpctl.szig import SZIG, SZIGError
 from zorpctl.ProcessAlgorithms import ProcessAlgorithm, GetProcInfoAlgorithm
 from zorpctl.CommandResults import CommandResultFailure, CommandResultSuccess
 from zorpctl.InstancesConf import InstancesConf
+import argparse
 
 class RunningInstances(object):
 
@@ -77,7 +78,7 @@ class GetMemoryRSSAlgorithm(ProcessAlgorithm):
         proc_info = algorithm.run()
         if not proc_info:
             return proc_info
-        return CommandResultSuccess("", int(proc_info["rss"]))
+        return CommandResultSuccess("", int(proc_info["rss"])*4)
 
     def execute(self):
         return self.get()
@@ -93,7 +94,7 @@ class GetMemoryVSZAlgorithm(ProcessAlgorithm):
         proc_info = algorithm.run()
         if not proc_info:
             return proc_info
-        return CommandResultSuccess("", int(proc_info["vsize"]))
+        return CommandResultSuccess("", int(proc_info["vsize"])/1024)
  
     def execute(self):
         return self.get()
@@ -143,3 +144,37 @@ class GetServiceRateAlgorithm(GetAlgorithm):
             return services
 
         return self.getServiceRate(services)
+
+class ParseZorpArgumentsAlgorithm(ProcessAlgorithm):
+
+    def __init__(self):
+        super(ParseZorpArgumentsAlgorithm, self).__init__()
+
+        self.parser = argparse.ArgumentParser(
+                                        prog="Zorp specific instance argument parser")
+        self.parser.add_argument('--threads', type=int)
+        self.parser.add_argument('--stack-size', type=int)
+        self.parser.add_argument('--process-mode', type=str)
+        self.parser.add_argument('--verbose', type=int)
+        self.parser.add_argument('--uid', type=str)
+        self.parser.add_argument('--gid', type=str)
+        self.parser.add_argument('--fd-limit-min', type=int)
+        self.parser.add_argument('--policy', type=str)
+
+    def execute(self):
+        return vars(self.parser.parse_args(self.instance.zorp_argv.split()))
+
+class GetThreadLimitAlgorithm(ProcessAlgorithm):
+
+    def __init__(self):
+        super(GetThreadLimitAlgorithm, self).__init__()
+
+        self.parse_algorithm = ParseZorpArgumentsAlgorithm()
+
+    def errorHandling(self):
+        self.parse_algorithm.run()
+
+    def execute(self):
+        self.parse_algorithm.setInstance(self.instance)
+        self.errorHandling()
+        return CommandResultSuccess("", self.parse_algorithm.run()['threads'])

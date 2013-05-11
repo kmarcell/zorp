@@ -1,0 +1,70 @@
+#!/usr/bin/env python
+# vim: ft=python
+
+import sys
+from zorpctl.Instances import InstanceHandler
+from zorpctl.Munin import GetThreadLimitAlgorithm, GetThreadsRunningAlgorithm
+from zorpctl.InstancesConf import InstancesConf
+
+CRITICAL_LEVEL_IN_PERCENT = 90
+WARNING_LEVEL_IN_PERCENT = 80
+
+def isAboveCritical(value, limit):
+    return value > limit * (CRITICAL_LEVEL_IN_PERCENT / 100.0)
+
+def isAboveWarning(value, limit):
+    return value > limit * (WARNING_LEVEL_IN_PERCENT / 100.0)
+
+def getThreadLimit(instance):
+    thread_limit_algorithm = GetThreadLimitAlgorithm()
+    thread_limit_algorithm.setInstance(instance)
+    thread_limit_result = thread_limit_algorithm.run()
+    if not thread_limit_result:
+        print "STATE UNKNOWN - not succeeded reading thread_limit on instance %s" % instance.name
+        sys.exit(3)
+    return thread_limit_result.value
+
+def getThreadsRunning(instance):
+    return InstanceHandler.executeAlgorithmOnInstanceProcesses(instance, GetThreadsRunningAlgorithm())
+
+def getSumRunningThreads(instance):
+    results = getThreadsRunning(instance)
+    sum_threads = sum([result.value for result in results])
+    return sum_threads
+
+def getThreadLimitWarningsAndCriticals():
+    warnings = []
+    criticals = []
+
+    for instance in InstancesConf():
+        try:
+            sum_threads = getSumRunningThreads(instance)
+            limit = getThreadLimit(instance)
+        except Exception as e:
+            print "STATE UNKOWN - %s" % e.strerror
+
+        if isAboveCritical(sum_threads, limit):
+            criticals.append((instance.name, limit, sum_threads))
+
+        if isAboveWarning(sum_threads, limit):
+            warnings.append((instance.name, limit, sum_threads))
+
+    return warnings, criticals
+
+def main():
+
+    warnings, criticals = getThreadLimitWarningsAndCriticals()
+
+    if criticals:
+        print("CRITICAL - %s" % ", ".join(["%s %d/%d" % x + " (%d" % int(x[2]/float(x[1]) * 100) + "%)" for x in criticals]))
+        sys.exit(2)
+
+    if warnings:
+        print("WARNING - %s" % ", ".join(["%s %d/%d" % x + " (%d" % int(x[2]/float(x[1]) * 100) + "%)" for x in warnings]))
+        sys.exit(1)
+
+    print("OK - All thread number is under the %d percent limit" % (WARNING_LEVEL_IN_PERCENT))
+    sys.exit(0)
+
+if __name__ == "__main__":
+    main()
