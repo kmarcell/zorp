@@ -353,8 +353,8 @@ class StatusAlgorithm(ProcessAlgorithm):
         status.policy_file = self.szig.get_value('info.policy.file')
         status.timestamp_szig = self.szig.get_value('info.policy.file_stamp')
         status.reload_timestamp = self.szig.get_value('info.policy.reload_stamp')
-        timestamp_os = os.path.getmtime(status.policy_file)
-        status.reloaded = str(status.timestamp_szig) == str(timestamp_os).split('.')[0]
+        status.timestamp_os = os.path.getmtime(status.policy_file)
+        status.reloaded = str(status.timestamp_szig) == str(status.timestamp_os).split('.')[0]
 
         return status
 

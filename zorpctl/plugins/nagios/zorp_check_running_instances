@@ -1,0 +1,64 @@
+#!/usr/bin/env python
+# vim: ft=python
+
+import sys
+from zorpctl.InstancesConf import InstancesConf
+from zorpctl.ProcessAlgorithms import ProcessAlgorithm
+
+
+def isRunning(instance):
+    algorithm = ProcessAlgorithm()
+    try:
+        return algorithm.isRunning(instance.process_name)
+    except Exception as e:
+        print "STATE UNKNOWN - %s" % e.strerror
+
+
+def getWhichInstanceProcessNotRunning(instance):
+    not_running = []
+    for i in range(0, instance.number_of_processes):
+        instance.process_num = i
+        if not isRunning(instance):
+            not_running.append(instance.process_name)
+
+    return not_running
+
+def getNotRunningInstancesProcesses():
+    not_running_processes = []
+    not_running_instances = []
+    for instance in InstancesConf():
+        not_running = getWhichInstanceProcessNotRunning(instance)
+
+        if len(not_running) == instance.number_of_processes:
+            not_running_instances.append(instance.name)
+        else:
+            not_running_processes += not_running
+
+    return not_running_instances, not_running_processes
+
+def checkCritical(not_running_instances, not_running_processes):
+    if not_running_instances:
+        msg = "CRITICAL - the following instances: %s" % ", ".join(not_running_instances)
+        if not_running_processes:
+            msg += "and the following processes: %s" % ", ".join(not_running_processes)
+        msg += " are not running!"
+        print msg
+        sys.exit(2)
+
+
+def checkWarning(not_running_processes):
+    if not_running_processes:
+        print "WARNING - the following processes: %s are not running!" % ", ".join(not_running_processes)
+        sys.exit(1)
+
+def main():
+
+    not_running_instances, not_running_processes = getNotRunningInstancesProcesses( )
+    checkCritical(not_running_instances, not_running_processes)
+    checkWarning(not_running_processes)
+
+    print("OK - All instances running")
+    sys.exit(0)
+
+if __name__ == "__main__":
+    main()

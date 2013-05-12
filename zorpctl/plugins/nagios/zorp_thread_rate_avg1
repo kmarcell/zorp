@@ -1,31 +1,8 @@
 #!/usr/bin/env python
 # vim: ft=python
-"""
-=head1 NAME
-
-Zorp thread rate average 1 - Plugin to monitor the average rate of threads in Zorp
-
-=head1 CONFIGURATION
-
-No configuration
-
-=head1 AUTHOR
-
-Marcell Kresz
-
-=head1 LICENSE
-
-GNU GPL
-
-=head1 MAGIC MARKERS
-
- #%# family=auto
- #%# capabilities=autoconf
-"""
 
 import sys
-
-from zorpctl.Munin import *
+from zorpctl.PluginAlgorithms import *
 from zorpctl.Instances import InstanceHandler
 
 if len(sys.argv) > 1:

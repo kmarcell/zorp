@@ -6,18 +6,6 @@ group zorp
 user zorp
 group zorp
 
-[zorp_thread_rate_avg15]
-user zorp
-group zorp
-
-[zorp_thread_rate_avg5]
-user zorp
-group zorp
-
-[zorp_thread_rate_avg1]
-user zorp
-group zorp
-
 [zorp_memory_rss]
 user zorp
 group zorp
@@ -26,3 +14,6 @@ group zorp
 user zorp
 group zorp
 
+[zorp_session_number]
+user zorp
+group zorp

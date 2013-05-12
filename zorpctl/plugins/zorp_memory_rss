@@ -25,7 +25,7 @@ GNU GPL
 
 import sys
 
-from zorpctl.Munin import *
+from zorpctl.PluginAlgorithms import *
 from zorpctl.Instances import InstanceHandler
 
 if len(sys.argv) > 1:

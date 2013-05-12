@@ -3,7 +3,7 @@
 
 import sys
 from zorpctl.Instances import InstanceHandler
-from zorpctl.Munin import GetThreadLimitAlgorithm, GetThreadsRunningAlgorithm
+from zorpctl.PluginAlgorithms import GetThreadLimitAlgorithm, GetThreadsRunningAlgorithm
 from zorpctl.InstancesConf import InstancesConf
 
 CRITICAL_LEVEL_IN_PERCENT = 90
