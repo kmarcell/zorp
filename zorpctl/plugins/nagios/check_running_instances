@@ -1,0 +1,44 @@
+#!/usr/bin/env python
+# vim: ft=python
+
+import sys
+from zorpctl.Instances import InstanceHandler
+from zorpctl.InstancesConf import InstancesConf
+from zorpctl.ProcessAlgorithms import ProcessAlgorithm
+
+def main():
+
+    algorithm = ProcessAlgorithm()
+    not_running_processes = []
+    not_running_instances = []
+    for instance in InstancesConf():
+        not_running = []
+        for i in range(0, instance.number_of_processes):
+            instance.process_num = i
+            try:
+                if not algorithm.isRunning(instance.process_name):
+                    not_running.append(instance.process_name)
+            except Exception as e:
+                print("STATE UNKNOWN - %s" % e.strerror)
+        if len(not_running) == instance.number_of_processes:
+            not_running_instances.append(instance.name)
+        else:
+           not_running_processes += not_running
+
+    if not_running_instances:
+        msg = "CRITICAL - the following instances: %s" % ", ".join(not_running_instances)
+        if not_running_processes:
+            msg += "and the following processes: %s" % ", ".join(not_running_processes)
+        msg += " are not running!"
+        print(msg)
+        sys.exit(2)
+
+    if not_running_processes:
+        print("WARNING - the following processes: %s are not running!" % ", ".join(not_running_processes))
+        sys.exit(1)
+
+    print("OK - All instances running")
+    sys.exit(0)
+
+if __name__ == "__main__":
+    main()
