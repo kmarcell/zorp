@@ -1,0 +1,73 @@
+#!/usr/bin/env python
+# vim: ft=python
+
+import sys
+from zorpctl.Instances import ZorpHandler
+
+CRITICAL_DIFF_IN_SEC = 3600
+WARNING_DIFF_IN_SEC = 600
+
+def getDifference(process_status):
+    return int(process_status.timestamp_szig) - int(process_status.timestamp_os)
+
+def getCriticalsWarnings(instances_without_policy_reload):
+    criticals = []
+    warnings = []
+    for instance_name in instances_without_policy_reload.keys():
+        diff = getDifference(instances_without_policy_reload[instance_name])
+        if diff < 0 - CRITICAL_DIFF_IN_SEC:
+            criticals.append(instance_name)
+        if diff < 0 - WARNING_DIFF_IN_SEC:
+            warnings.append(instance_name)
+
+    return criticals, warnings
+
+def checkCritical(criticals, warnings):
+    if criticals:
+        msg = "CRITICAL - policy is not reloaded in the following processes:"
+        msg += ", ".join(criticals)
+        if warnings:
+            msg += ", ".join(warnings)
+        print msg
+        sys.exit(2)
+
+def checkWarning(warnings):
+    if warnings:
+        msg = "WARNING - policy is not reloaded in the following processes:"
+        msg += ", ".join(warnings)
+        print msg
+        sys.exit(1)
+
+def hasLessDifference(status, instances_without_policy_reload):
+        orig_difference = getDifference(instances_without_policy_reload[status.name])
+        new_difference = getDifference(status)
+        return new_difference > orig_difference
+
+def shouldChooseNewValue(instances_without_policy_reload, result):
+    return not result.name in instances_without_policy_reload or hasLessDifference(result, instances_without_policy_reload)
+
+def getInstancesWithoutReloadedPolicy(results):
+    instances_without_policy_reload = {}
+    for result in results:
+        if not result:
+            print "STATE UNKNOWN - %s" % str(result)
+            sys.exit(3)
+        if not result.reloaded and shouldChooseNewValue(instances_without_policy_reload, result):
+            instances_without_policy_reload[result.name] = result
+    
+    return instances_without_policy_reload
+
+def main():
+    results = ZorpHandler.status()
+    intances = getInstancesWithoutReloadedPolicy(results)
+
+    criticals, warnings = getCriticalsWarnings(intances)
+
+    checkCritical(criticals, warnings)
+    checkWarning(warnings)
+
+    print("OK - every policy is reloaded")
+    sys.exit(0)
+
+if __name__ == "__main__":
+    main()
