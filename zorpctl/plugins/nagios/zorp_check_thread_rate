@@ -1,0 +1,56 @@
+#!/usr/bin/env python
+# vim: ft=python
+
+import sys
+from zorpctl.PluginAlgorithms import RunningInstances, GetThreadRateAlgorithm
+from zorpctl.Instances import InstanceHandler
+
+CRITICAL_RATE_1_5_15 = 2, 3, 4
+WARNING_RATE_1_5_15 = 1, 2, 3
+
+def isCritical(avg1, avg5, avg15):
+    return (avg1 > CRITICAL_RATE_1_5_15[0] or
+           avg5 > CRITICAL_RATE_1_5_15[1] or
+           avg15 > CRITICAL_RATE_1_5_15[2])
+
+def isWarning(avg1, avg5, avg15):
+    return (avg1 > WARNING_RATE_1_5_15[0] or
+            avg5 > WARNING_RATE_1_5_15[1] or
+            avg15 > WARNING_RATE_1_5_15[2])
+
+
+def getCriticalsWarnings():
+    criticals = []
+    warnings = []
+    for instance in RunningInstances():
+        results = InstanceHandler.executeAlgorithmOnInstanceProcesses(instance, GetThreadRateAlgorithm())
+        avg1 = sum([result.value["avg1"] for result in results if result]) / instance.number_of_processes
+        avg5 = sum([result.value["avg5"] for result in results if result]) / instance.number_of_processes
+        avg15 = sum([result.value["avg15"] for result in results if result]) / instance.number_of_processes
+
+        if isCritical(avg1, avg5, avg15):
+            criticals.append((instance.name, avg1, avg5, avg15))
+        if isWarning(avg1, avg5, avg15):
+            warnings.append((instance.name, avg1, avg5, avg15))
+
+    return criticals, warnings
+
+def main():
+    criticals, warnings = getCriticalsWarnings()
+
+    if criticals:
+        msg = "CRITICAL - The following instances exceeded limit %d %d %d:" % CRITICAL_RATE_1_5_15
+        msg += ", ".join(["%s (%d, %d, %d)" % crit for crit in criticals])
+        print(msg)
+        sys.exit(2)
+
+    if warnings:
+        msg = "WARNING - The following instances exceeded limit %d %d %d:" % WARNING_RATE_1_5_15
+        msg += ", ".join(["%s (%d, %d, %d)" % warn for warn in warnings])
+        print(msg)
+        sys.exit(1)
+
+    print("OK - All instances are below limit")
+
+if __name__ == "__main__":
+    main()
