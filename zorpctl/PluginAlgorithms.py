@@ -177,4 +177,5 @@ class GetThreadLimitAlgorithm(ProcessAlgorithm):
     def execute(self):
         self.parse_algorithm.setInstance(self.instance)
         self.errorHandling()
-        return CommandResultSuccess("", self.parse_algorithm.run()['threads'])
+        zorp_arguments = self.parse_algorithm.run()
+        return CommandResultSuccess("", zorp_arguments['threads'])

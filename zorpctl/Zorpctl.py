@@ -12,7 +12,7 @@ from zorpctl.ProcessAlgorithms import (StartAlgorithm, StopAlgorithm,
                                 LogLevelAlgorithm , DeadlockCheckAlgorithm,
                                 StatusAlgorithm, ReloadAlgorithm,
                                 CoredumpAlgorithm, SzigWalkAlgorithm,
-                                DetailedStatusAlgorithm)
+                                DetailedStatusAlgorithm, AuthorizeAlgorithm)
 
 #TODO: Logging
 """
@@ -230,10 +230,16 @@ class Zorpctl(object):
         a_parse.add_argument('listofinstances', nargs=argparse.REMAINDER)
         a_args = a_parse.parse_args(params)
         if a_args.value == None:
-            UInterface.informUser("usage: zorpctl authorize [-h] --accept [--reject] description ...\n" +
+            UInterface.informUser("usage: zorpctl authorize [-h] [--accept] [--reject] description ...\n" +
                                   "zorpctl authorize: either the '--accept' or '--reject' option has to be specified")
             return
-        print(a_args)
+
+        if not a_args.listofinstances:
+            UInterface.informUser(ZorpHandler.authorize(a_args.value, a_args.description)
+        else:
+            manner = AuthorizeAlgorithm.ACCEPT if a_args.value else AuthorizeAlgorithm.REJECT
+            algorithm = AuthorizeAlgorithm(manner, descriptioni)
+            Zorpctl.runAlgorithmOnList(a_args.listofinstances, algorithm)
 
     def gui_status(self):
         raise NotImplementedError()

@@ -44,7 +44,8 @@ def hasLessDifference(status, instances_without_policy_reload):
         return new_difference > orig_difference
 
 def shouldChooseNewValue(instances_without_policy_reload, result):
-    return not result.name in instances_without_policy_reload or hasLessDifference(result, instances_without_policy_reload)
+    return (not result.name in instances_without_policy_reload or
+            hasLessDifference(result, instances_without_policy_reload))
 
 def getInstancesWithoutReloadedPolicy(results):
     instances_without_policy_reload = {}
@@ -54,7 +55,7 @@ def getInstancesWithoutReloadedPolicy(results):
             sys.exit(3)
         if not result.reloaded and shouldChooseNewValue(instances_without_policy_reload, result):
             instances_without_policy_reload[result.name] = result
-    
+
     return instances_without_policy_reload
 
 def main():

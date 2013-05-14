@@ -234,7 +234,7 @@ class DeadlockCheckAlgorithm(ProcessAlgorithm):
 
     def setDeadlockcheck(self, value):
         self.szig.deadlockcheck = value
-        return CommandResultSuccess()
+        return CommandResultSuccess("")
 
     def execute(self):
         error = self.errorHandling()
@@ -448,10 +448,11 @@ class DetailedStatusAlgorithm(ProcessAlgorithm):
         return starttime
 
     def assembleDetails(self, status, proc_info, jps):
+        PAGESIZE = 4 #getconf PAGESIZE in kB (40940966)
         details = "started at: %s\n" % self._getStartTime(proc_info, jps)
         details += "policy: file=%s, loaded=%s\n" % (status.policy_file, self._getLoaded(status.reload_timestamp))
         details += "cpu: real=%d:%f, user=%d:%f, sys=%d:%f\n" % self._getTimes(proc_info, jps)
-        details += "memory: vsz=%s, rss=%s" % (int(proc_info["vsize"])/1024, int(proc_info["rss"])*4)
+        details += "memory: vsz=%skB, rss=%skB" % (int(proc_info["vsize"])/1024, int(proc_info["rss"]) * PAGESIZE)
 
         return details
 
