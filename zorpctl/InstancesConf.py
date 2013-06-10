@@ -5,18 +5,14 @@ class InstancesConf(object):
     def __init__(self):
         self.prefix = "" #TODO: @PREFIX@
         self.instances_conf_path = self.prefix + "/etc/zorp/instances.conf"
-        try:
-            self.instances_conf_file = open(self.instances_conf_path, 'r')
-        except IOError as e:
-            self.instances_conf_file = None
-            e.strerror = "%s %s" % (self.instances_conf_path, e.strerror)
-            raise e
+        self.instances_conf_file = None
 
     def __del__(self):
         if self.instances_conf_file:
             self.instances_conf_file.close()
 
     def __iter__(self):
+        self.instances_conf_file = open(self.instances_conf_path, 'r')
         return self
 
     def next(self):
@@ -34,7 +30,7 @@ class InstancesConf(object):
 
     def _parseZorpctlArgs(self, zorpctl_argv):
         parser = argparse.ArgumentParser()
-        parser.add_argument('--parallel-instances', type=int,
+        parser.add_argument('--num-of-processes', type=int,
                             dest='number_of_processes', default=1
                             )
         parser.add_argument('--auto-restart', dest='auto_restart',

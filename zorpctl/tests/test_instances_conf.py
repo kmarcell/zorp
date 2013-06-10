@@ -13,7 +13,7 @@ class TestInstancesConf(unittest.TestCase):
                              "enable_core" : True
                             }
 
-        zorpctl_argv = "--parallel-instances 4"
+        zorpctl_argv = "--num-of-processes 4"
         if not self.zorpctl_argv["auto_restart"]:
             zorpctl_argv += " --no-auto-restart"
         if not self.zorpctl_argv["auto_start"]:
@@ -30,15 +30,18 @@ class TestInstancesConf(unittest.TestCase):
         os.remove(self.filename)
 
     def test_instance_generation(self):
-        instancesconf = InstancesConf()
-        instancesconf.instances_conf_file = open(self.filename, 'r')
-        for instance in instancesconf:
-            self.assertEquals(instance.name, self.instance_name)
-            self.assertEquals(instance.zorp_argv[len(instance.name) + 1:], self.zorp_argv)
-            self.assertEquals(instance.number_of_processes, self.zorpctl_argv["num_of_processes"])
-            self.assertEquals(instance.auto_restart, self.zorpctl_argv["auto_restart"])
-            self.assertEquals(instance.auto_start, self.zorpctl_argv["auto_start"])
-            self.assertEquals(instance.enable_core, self.zorpctl_argv["enable_core"])
+        try:
+             instancesconf = InstancesConf()
+             instancesconf.instances_conf_path = self.filename
+             for instance in instancesconf:
+                 self.assertEquals(instance.name, self.instance_name)
+                 self.assertEquals(instance.zorp_argv, self.zorp_argv)
+                 self.assertEquals(instance.number_of_processes, self.zorpctl_argv["num_of_processes"])
+                 self.assertEquals(instance.auto_restart, self.zorpctl_argv["auto_restart"])
+                 self.assertEquals(instance.auto_start, self.zorpctl_argv["auto_start"])
+                 self.assertEquals(instance.enable_core, self.zorpctl_argv["enable_core"])
+        except IOError as e:
+             self.assertFalse("Something went wrong while initializing InstancesConf object: %s" % e.strerror)
 
 if __name__ == '__main__':
     unittest.main()
