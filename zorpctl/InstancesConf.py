@@ -1,9 +1,12 @@
 import argparse
 from zorpctl.InstanceClass import Instance
+import zorpctl.prefix
+
+PATH_PREFIX = zorpctl.prefix.PATH_PREFIX
 
 class InstancesConf(object):
     def __init__(self):
-        self.prefix = "" #TODO: @PREFIX@
+        self.prefix = PATH_PREFIX
         self.instances_conf_path = self.prefix + "/etc/zorp/instances.conf"
         self.instances_conf_file = None
 

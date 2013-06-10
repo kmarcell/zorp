@@ -1,6 +1,11 @@
-import os, signal, time, subprocess, datetime
+import os, sys, signal, time, subprocess, datetime
 from zorpctl.szig import SZIG, SZIGError
 from zorpctl.CommandResults import CommandResultSuccess, CommandResultFailure
+import zorpctl.prefix
+
+PATH_PREFIX = zorpctl.prefix.PATH_PREFIX
+sys.path.append(PATH_PREFIX + '/etc/zorp')
+import zorpctl_conf as ZORPCTLCONF
 
 class ProcessStatus(object):
     def __init__(self, name):
@@ -21,8 +26,9 @@ class ProcessStatus(object):
 class ProcessAlgorithm(object):
 
     def __init__(self):
-        self.prefix = "" #TODO: @PREFIX@
-        self.install_path = self.prefix + "/usr/lib/zorp/"
+        self.prefix = PATH_PREFIX
+        self.install_path = self.prefix + ZORPCTLCONF.INSTALL_DIR + '/'
+        self.pidfiledir = ZORPCTLCONF.PIDFILE_DIR
         self.force = False
         self.instance = None
         #variable indicates if force is active by force commands
@@ -52,7 +58,7 @@ class ProcessAlgorithm(object):
 
     def getProcessPid(self, process):
         try:
-            file_name = self.prefix + '/var/run/zorp/zorp-' + process + '.pid'
+            file_name = self.prefix + self.pidfiledir  + '/zorp-' + process + '.pid'
             pid_file = open(file_name)
             pid = int(pid_file.read())
             pid_file.close()
