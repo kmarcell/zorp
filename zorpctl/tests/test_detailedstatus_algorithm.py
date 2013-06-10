@@ -97,7 +97,7 @@ class TestDetailedStatusAlgorithm(unittest.TestCase):
         status.policy_file = "/etc/zorp/policy.py"
         expected_result =('policy: file=/etc/zorp/policy.py, loaded=2013-05-04 12:42:05' +
                  '\ncpu: real=0:0.780000, user=0:0.460000, sys=0:0.320000\n' +
-                 'memory: vsz=288628, rss=12480'
+                 'memory: vsz=288628kB, rss=12480kB'
         )
         chop_len = len('started at: yyyy-mm-dd xx:xx:xx.xxxxxx\n')
         #must chop started at part because of now and uptime calculations

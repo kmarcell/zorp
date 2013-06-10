@@ -6,7 +6,7 @@ class TestStartAlgorithm(unittest.TestCase):
     def setUp(self):
         self.params = {
                        "name" : "default",
-                       "zorp_argv" : "default some options",
+                       "zorp_argv" : "some options",
                        "auto_restart" : True,
                        "number_of_processes" : 4,
                        "enable_core" : True
