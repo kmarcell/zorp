@@ -1,8 +1,12 @@
-import argparse
+import argparse, sys
 from zorpctl.InstanceClass import Instance
 import zorpctl.prefix
 
 PATH_PREFIX = zorpctl.prefix.PATH_PREFIX
+
+sys.path.append(PATH_PREFIX + '/etc/zorp')
+import zorpctl_conf as ZORPCTLCONF
+
 
 class InstancesConf(object):
     def __init__(self):
@@ -36,8 +40,13 @@ class InstancesConf(object):
         parser.add_argument('--num-of-processes', type=int,
                             dest='number_of_processes', default=1
                             )
+        try:
+            autorestart_default = ZORPCTLCONF.AUTO_RESTART
+        except AttributeError:
+            autorestart_default = None
+
         parser.add_argument('--auto-restart', dest='auto_restart',
-                            action='store_true', default=None
+                            action='store_true', default=autorestart_default
                             )
         parser.add_argument('--no-auto-restart', dest='auto_restart',
                             action='store_false', default=None
