@@ -70,7 +70,7 @@ class ZorpHandler(object):
             for instance in InstancesConf():
                 result += InstanceHandler.executeAlgorithmOnInstanceProcesses(instance, algorithm)
             return result
-        except IOError as e:
+        except BaseException as e:
             return CommandResultFailure(e.strerror)
 
 class InstanceHandler(object):

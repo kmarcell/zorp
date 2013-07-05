@@ -27,8 +27,14 @@ class ProcessAlgorithm(object):
 
     def __init__(self):
         self.prefix = PATH_PREFIX
-        self.install_path = self.prefix + ZORPCTLCONF.INSTALL_DIR + '/'
-        self.pidfiledir = ZORPCTLCONF.PIDFILE_DIR
+        try:
+            self.install_path = self.prefix + ZORPCTLCONF.INSTALL_DIR + '/'
+            self.pidfiledir = ZORPCTLCONF.PIDFILE_DIR
+        except AttributeError as e:
+            e.strerror = "You must specify the install directory of Zorp executable \
+like INSTALL_DIR='/usr/lib/zorp' and the directory where Zorp puts it's pid files \
+like PIDFILE_DIR='/var/run/zorp', put it in to the zorpctl's configuration file!"
+            raise e
         self.force = False
         self.instance = None
         #variable indicates if force is active by force commands
@@ -79,7 +85,10 @@ class ProcessAlgorithm(object):
 class StartAlgorithm(ProcessAlgorithm):
 
     def __init__(self):
-        self.start_timeout = 5
+        try:
+            self.start_timeout = ZORPCTLCONF.START_WAIT_TIMEOUT
+        except AttributeError:
+            self.start_timeout = 10
         super(StartAlgorithm, self).__init__()
 
     def errorHandling(self):
@@ -112,8 +121,12 @@ class StartAlgorithm(ProcessAlgorithm):
 
     def waitTilTimoutToStart(self):
         t = 1
+        try:
+            delay = ZORPCTLCONF.STOP_CHECK_DELAY
+        except AttributeError:
+            delay = 1
         while t <= self.start_timeout and not self.isRunning(self.instance.process_name):
-            time.sleep(1)
+            time.sleep(delay)
             t += 1
 
     def start(self):
@@ -139,7 +152,10 @@ class StartAlgorithm(ProcessAlgorithm):
 class StopAlgorithm(ProcessAlgorithm):
 
     def __init__(self):
-        self.stop_timeout = 5
+        try:
+            self.stop_timeout = ZORPCTLCONF.STOP_CHECK_TIMEOUT
+        except AttributeError:
+            self.stop_timeout = 5
         super(StopAlgorithm, self).__init__()
 
         self.pid = None
@@ -151,8 +167,12 @@ class StopAlgorithm(ProcessAlgorithm):
 
     def waitTilTimeoutToStop(self):
         t = 1
+        try:
+            delay = ZORPCTLCONF.STOP_CHECK_DELAY
+        except AttributeError:
+            delay = 1
         while t <= self.stop_timeout and self.isRunning(self.instance.process_name):
-            time.sleep(1)
+            time.sleep(delay)
             t += 1
 
     def killProcess(self, sig):
@@ -454,7 +474,7 @@ class DetailedStatusAlgorithm(ProcessAlgorithm):
         return starttime
 
     def assembleDetails(self, status, proc_info, jps):
-        PAGESIZE = 4 #getconf PAGESIZE in kB (40940966)
+        PAGESIZE = 4 #getconf PAGESIZE in kB (4096)
         details = "started at: %s\n" % self._getStartTime(proc_info, jps)
         details += "policy: file=%s, loaded=%s\n" % (status.policy_file, self._getLoaded(status.reload_timestamp))
         details += "cpu: real=%d:%f, user=%d:%f, sys=%d:%f\n" % self._getTimes(proc_info, jps)

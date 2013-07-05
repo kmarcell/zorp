@@ -235,7 +235,7 @@ class Zorpctl(object):
             return
 
         if not a_args.listofinstances:
-            UInterface.informUser(ZorpHandler.authorize(a_args.value, a_args.description)
+            UInterface.informUser(ZorpHandler.authorize(a_args.value, a_args.description))
         else:
             manner = AuthorizeAlgorithm.ACCEPT if a_args.value else AuthorizeAlgorithm.REJECT
             algorithm = AuthorizeAlgorithm(manner, descriptioni)
@@ -388,4 +388,7 @@ parser.add_argument('params', nargs=argparse.REMAINDER)
 args = parser.parse_args()
 
 command_function = Commands.get(args.command)
-command_function(args.params)
+try:
+    command_function(args.params)
+except BaseException as e:
+    UInterface.informUser(e.strerror)
