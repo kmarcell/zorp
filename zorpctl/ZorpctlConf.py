@@ -1,41 +1,6 @@
 import zorpctl.prefix, ConfigParser
 
-@Singleton
-class ZorpctlConfig(object):
-
-    def __init__(self):
-        self.config = ConfigParser.ConfigParser(allow_no_value=True)
-        self.path = zorpctl.prefix.PATH_PREFIX + '/etc/zorp/'
-
-    def __getitem__(self, key):
-        try:
-             value = self.config.get('zorpctl', key)
-        except ConfigParser.NoOptionError:
-            raise KeyError(key)
-
-        try:
-             value = int(value)
-        except ValueError:
-             pass
-
-        return value
-
-    @property
-    def path:
-        return self._path
-
-    @path.set
-    def path(value):
-        self._path = value
-        self.parse()
-
-    def parse(self):
-        if not self.config.read(self.path + '/zorpctl.conf'):
-            if not self.config.read(self.path):
-                raise EnvironmentError("The given directory does not \
-contain a zorpctl.conf file! (Also check permissions!)")
-
-class Singleton:
+class Singleton(object):
     """
     A non-thread-safe helper class to ease implementing singletons.
     This should be used as a decorator -- not a metaclass -- to the
@@ -73,3 +38,39 @@ class Singleton:
 
     def __instancecheck__(self, inst):
         return isinstance(inst, self._decorated)
+
+
+@Singleton
+class ZorpctlConfig(object):
+
+    def __init__(self):
+        self.config = ConfigParser.ConfigParser(allow_no_value=True)
+        self.path = zorpctl.prefix.PATH_PREFIX + '/etc/zorp/'
+
+    def __getitem__(self, key):
+        try:
+             value = self.config.get('zorpctl', key)
+        except ConfigParser.NoOptionError:
+            raise KeyError(key)
+
+        try:
+             value = int(value)
+        except ValueError:
+             pass
+
+        return value
+
+    @property
+    def path(self):
+        return self._path
+
+    @path.setter
+    def path(self, value):
+        self._path = value
+        self.parse()
+
+    def parse(self):
+        if not self.config.read(self.path + '/zorpctl.conf'):
+            if not self.config.read(self.path):
+                raise EnvironmentError("The given directory does not \
+contain a zorpctl.conf file! (Also check permissions!)")

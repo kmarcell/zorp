@@ -8,9 +8,9 @@ class InstancesConf(object):
         self.prefix = zorpctl.prefix.PATH_PREFIX
         self.ZORPCTLCONF = ZorpctlConfig.Instance()
         try:
-             self.instances_conf_path = self.prefix + '/' +
-                                        ZORPCTLCONF['CONFIG_DIR'] +
-                                        "/instances.conf"
+             self.instances_conf_path = (self.prefix + '/' +
+                                        self.ZORPCTLCONF['CONFIG_DIR'] +
+                                        "/instances.conf")
         except KeyError:
              self.instances_conf_path = self.prefix + '/etc/zorp/instances.conf'
         self.instances_conf_file = None
@@ -42,7 +42,7 @@ class InstancesConf(object):
                             dest='number_of_processes', default=1
                             )
         try:
-            autorestart_default = ZORPCTLCONF['AUTO_RESTART']
+            autorestart_default = self.ZORPCTLCONF['AUTO_RESTART']
         except AttributeError:
             autorestart_default = None
 

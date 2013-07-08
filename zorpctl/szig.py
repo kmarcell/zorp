@@ -8,6 +8,7 @@ from zorpctl.SZIGMessages import (
         MessageReloadResult, MessageSetDeadLockCheck,
         MessageSetLogLevel, MessageSetLogSpec, MessageStopSession
     )
+import zorpctl.prefix
 from zorpctl.ZorpctlConf import ZorpctlConfig
 
 

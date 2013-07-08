@@ -24,7 +24,7 @@ class ProcessAlgorithm(object):
 
     def __init__(self):
         self.prefix = zorpctl.prefix.PATH_PREFIX
-        self.ZORPCTLCONF = zorpctl.ZorpctlConfig.Instance()
+        self.ZORPCTLCONF = ZorpctlConfig.Instance()
         try:
             self.install_path = self.prefix + '/' + self.ZORPCTLCONF['INSTALL_DIR'] + '/'
             self.pidfiledir = self.ZORPCTLCONF['PIDFILE_DIR']
