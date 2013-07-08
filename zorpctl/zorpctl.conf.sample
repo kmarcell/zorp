@@ -2,7 +2,7 @@
 # This file is sourced by zorpctl and contains default settings
 # for various parameters.
 #
-
+[zorpctl]
 # specifies whether --auto-restart is default
 AUTO_RESTART=1
 
@@ -23,23 +23,25 @@ PROCESS_LIMIT_MIN=256
 # The extra processes to allocate limit for.
 PROCESS_LIMIT_RESERVE=64
 
-# automatically append this string to each Zorp command line, this was
-# renamed in Zorp 3.0.3, but the original APPEND_ARGS option still works.
-ZORP_APPEND_ARGS=""
+# automatically append this string to each Zorp command line
+ZORP_APPEND_ARGS
 
 # arguments appended to the zorpctl instance specific options, such as
 # --enable-core
-ZORPCTL_APPEND_ARGS=""
+ZORPCTL_APPEND_ARGS
 
 # whether to check /etc/zorp permissions
-CHECK_PERMS="1"
-#CONFIG_DIR=/etc/zorp
-#CONFIG_DIR_OWNER=root
-#CONFIG_DIR_GROUP=zorp
+CHECK_PERMS=1
+CONFIG_DIR=/etc/zorp
+#CONFIG_DIR_OWNER="root"
+#CONFIG_DIR_GROUP="zorp"
 #CONFIG_DIR_MODE=0750
 
 # directory where Zorp stores its pidfiles
-#PIDFILE_DIR=/var/run/zorp
+PIDFILE_DIR=/var/run/zorp
+
+# directory where Zorp executable exists
+INSTALL_DIR=/usr/lib/zorp
 
 # set pidfile directory ownership according to the settings below (umask is
 # applied). 
@@ -47,12 +49,3 @@ CHECK_PERMS="1"
 PIDFILE_DIR_OWNER=zorp
 PIDFILE_DIR_GROUP=zorp
 PIDFILE_DIR_MODE=0770
-
-# Deprecated options, these options should not be used anymore and trigger a
-# warning in zorpctl if they are used.
-
-#PROCESS_LIMIT_THRESHOLD
-#AUTO_RESTART_TIME_THRESHOLD
-#AUTO_RESTART_MAX_COUNT
-#START_CHECK_TIMEOUT
-#AUTO_RESTART_DELAY

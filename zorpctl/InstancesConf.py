@@ -1,17 +1,21 @@
 import argparse, sys
 from zorpctl.InstanceClass import Instance
 import zorpctl.prefix
+import zorpctl.ZorpctlConf
 
 PATH_PREFIX = zorpctl.prefix.PATH_PREFIX
-
-sys.path.append(PATH_PREFIX + '/etc/zorp')
-import zorpctl_conf as ZORPCTLCONF
+ZORPCTLCONF = zorpctl.ZorpctlConf.getConfig()
 
 
 class InstancesConf(object):
     def __init__(self):
         self.prefix = PATH_PREFIX
-        self.instances_conf_path = self.prefix + "/etc/zorp/instances.conf"
+        try:
+             self.instances_conf_path = self.prefix + '/' +
+                                        ZORPCTLCONF['CONFIG_DIR'] +
+                                        "/instances.conf"
+        except KeyError:
+             self.instances_conf_path = self.prefix + '/etc/zorp/instances.conf'
         self.instances_conf_file = None
 
     def __del__(self):
@@ -41,7 +45,7 @@ class InstancesConf(object):
                             dest='number_of_processes', default=1
                             )
         try:
-            autorestart_default = ZORPCTLCONF.AUTO_RESTART
+            autorestart_default = ZORPCTLCONF['AUTO_RESTART']
         except AttributeError:
             autorestart_default = None
 
