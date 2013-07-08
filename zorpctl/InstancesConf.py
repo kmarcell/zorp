@@ -1,15 +1,12 @@
 import argparse, sys
 from zorpctl.InstanceClass import Instance
 import zorpctl.prefix
-import zorpctl.ZorpctlConf
-
-PATH_PREFIX = zorpctl.prefix.PATH_PREFIX
-ZORPCTLCONF = zorpctl.ZorpctlConf.getConfig()
-
+from zorpctl.ZorpctlConf import ZorpctlConfig
 
 class InstancesConf(object):
     def __init__(self):
-        self.prefix = PATH_PREFIX
+        self.prefix = zorpctl.prefix.PATH_PREFIX
+        self.ZORPCTLCONF = ZorpctlConfig.Instance()
         try:
              self.instances_conf_path = self.prefix + '/' +
                                         ZORPCTLCONF['CONFIG_DIR'] +

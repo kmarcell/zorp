@@ -1,19 +1,15 @@
 import zorpctl.prefix, ConfigParser
 
-def getConfig(path=zorpctl.prefix.PATH_PREFIX + '/etc/zorp/'):
-    config = ConfigParser.ConfigParser(allow_no_value=True)
-    if not config.read(path + 'zorpctl.conf'):
-        if not config.read(path):
-            raise EnvironmentError("The given directory does not \
-contain a zorpctl.conf file! (Also check permissions!)")
-    return ZorpctlConfig(config)
-
+@Singleton
 class ZorpctlConfig(object):
 
-    def __init__(self, config):
-        self.config = config
+    def __init__(self):
+        self.config = ConfigParser.ConfigParser(allow_no_value=True)
+        self.path = zorpctl.prefix.PATH_PREFIX + '/etc/zorp/'
 
     def __getitem__(self, key):
+        if not self.config:
+              self.parse()
         try:
              value = self.config.get('zorpctl', key)
         except ConfigParser.NoOptionError:
@@ -25,3 +21,48 @@ class ZorpctlConfig(object):
              pass
 
         return value
+
+    def parse(self):
+        if not self.config.read(self.path + '/zorpctl.conf'):
+            if not self.config.read(self.path):
+                raise EnvironmentError("The given directory does not \
+contain a zorpctl.conf file! (Also check permissions!)")
+
+class Singleton:
+    """
+    A non-thread-safe helper class to ease implementing singletons.
+    This should be used as a decorator -- not a metaclass -- to the
+    class that should be a singleton.
+
+    The decorated class can define one `__init__` function that
+    takes only the `self` argument. Other than that, there are
+    no restrictions that apply to the decorated class.
+
+    To get the singleton instance, use the `Instance` method. Trying
+    to use `__call__` will result in a `TypeError` being raised.
+
+    Limitations: The decorated class cannot be inherited from.
+
+    """
+
+    def __init__(self, decorated):
+        self._decorated = decorated
+
+    def Instance(self):
+        """
+        Returns the singleton instance. Upon its first call, it creates a
+        new instance of the decorated class and calls its `__init__` method.
+        On all subsequent calls, the already created instance is returned.
+
+        """
+        try:
+            return self._instance
+        except AttributeError:
+            self._instance = self._decorated()
+            return self._instance
+
+    def __call__(self):
+        raise TypeError('Singletons must be accessed through `Instance()`.')
+
+    def __instancecheck__(self, inst):
+        return isinstance(inst, self._decorated)

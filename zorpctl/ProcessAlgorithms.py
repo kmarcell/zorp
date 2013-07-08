@@ -2,11 +2,7 @@ import os, sys, signal, time, subprocess, datetime
 from zorpctl.szig import SZIG, SZIGError
 from zorpctl.CommandResults import CommandResultSuccess, CommandResultFailure
 import zorpctl.prefix
-import zorpctl.ZorpctlConf
-
-ZORPCTLCONF = zorpctl.ZorpctlConf.getConfig()
-
-PATH_PREFIX = zorpctl.prefix.PATH_PREFIX
+from zorpctl.ZorpctlConf import ZorpctlConfig
 
 class ProcessStatus(object):
     def __init__(self, name):
@@ -27,10 +23,11 @@ class ProcessStatus(object):
 class ProcessAlgorithm(object):
 
     def __init__(self):
-        self.prefix = PATH_PREFIX
+        self.prefix = zorpctl.prefix.PATH_PREFIX
+        self.ZORPCTLCONF = zorpctl.ZorpctlConfig.Instance()
         try:
-            self.install_path = self.prefix + '/' + ZORPCTLCONF['INSTALL_DIR'] + '/'
-            self.pidfiledir = ZORPCTLCONF['PIDFILE_DIR']
+            self.install_path = self.prefix + '/' + self.ZORPCTLCONF['INSTALL_DIR'] + '/'
+            self.pidfiledir = self.ZORPCTLCONF['PIDFILE_DIR']
         except KeyError as e:
             e.strerror = "You must specify the install directory of Zorp executable \
 like INSTALL_DIR='/usr/lib/zorp' and the directory where Zorp puts it's pid files \
@@ -87,7 +84,7 @@ class StartAlgorithm(ProcessAlgorithm):
 
     def __init__(self):
         try:
-            self.start_timeout = ZORPCTLCONF['START_WAIT_TIMEOUT']
+            self.start_timeout = self.ZORPCTLCONF['START_WAIT_TIMEOUT']
         except KeyError:
             self.start_timeout = 10
         super(StartAlgorithm, self).__init__()
@@ -123,7 +120,7 @@ class StartAlgorithm(ProcessAlgorithm):
     def waitTilTimoutToStart(self):
         t = 1
         try:
-            delay = ZORPCTLCONF['STOP_CHECK_DELAY']
+            delay = self.ZORPCTLCONF['STOP_CHECK_DELAY']
         except KeyError:
             delay = 1
         while t <= self.start_timeout and not self.isRunning(self.instance.process_name):
@@ -154,7 +151,7 @@ class StopAlgorithm(ProcessAlgorithm):
 
     def __init__(self):
         try:
-            self.stop_timeout = ZORPCTLCONF['STOP_CHECK_TIMEOUT']
+            self.stop_timeout = self.ZORPCTLCONF['STOP_CHECK_TIMEOUT']
         except KeyError:
             self.stop_timeout = 5
         super(StopAlgorithm, self).__init__()
@@ -169,7 +166,7 @@ class StopAlgorithm(ProcessAlgorithm):
     def waitTilTimeoutToStop(self):
         t = 1
         try:
-            delay = ZORPCTLCONF['STOP_CHECK_DELAY']
+            delay = self.ZORPCTLCONF['STOP_CHECK_DELAY']
         except KeyError:
             delay = 1
         while t <= self.stop_timeout and self.isRunning(self.instance.process_name):

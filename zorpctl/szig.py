@@ -8,10 +8,8 @@ from zorpctl.SZIGMessages import (
         MessageReloadResult, MessageSetDeadLockCheck,
         MessageSetLogLevel, MessageSetLogSpec, MessageStopSession
     )
+from zorpctl.ZorpctlConf import ZorpctlConfig
 
-PATH_PREFIX = zorpctl.prefix.PATH_PREFIX
-import zorpctl.ZorpctlConf
-ZORPCTLCONF = zorpctl.ZorpctlConf.getConfig()
 
 class Response(object):
     def __init__(self, succeeded, value = None):
@@ -121,7 +119,8 @@ class Handler(object):
 class SZIG(object):
 
     def __init__(self, process_name, handler=None):
-        self.pidfile_dir = PATH_PREFIX + ZORPCTLCONF['PIDFILE_DIR']
+        ZORPCTLCONF = ZorpctlConfig.Instance()
+        self.pidfile_dir = zorpctl.prefix.PATH_PREFIX + ZORPCTLCONF['PIDFILE_DIR']
         if not handler:
             handler = Handler
         self.handler = handler(self.pidfile_dir + 'zorpctl.' + process_name)
