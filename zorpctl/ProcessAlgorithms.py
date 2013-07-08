@@ -83,11 +83,11 @@ like PIDFILE_DIR='/var/run/zorp', put it in to the zorpctl's configuration file!
 class StartAlgorithm(ProcessAlgorithm):
 
     def __init__(self):
+        super(StartAlgorithm, self).__init__()
         try:
             self.start_timeout = self.ZORPCTLCONF['START_WAIT_TIMEOUT']
         except KeyError:
             self.start_timeout = 10
-        super(StartAlgorithm, self).__init__()
 
     def errorHandling(self):
         running = self.isRunning(self.instance.process_name)
@@ -150,11 +150,11 @@ class StartAlgorithm(ProcessAlgorithm):
 class StopAlgorithm(ProcessAlgorithm):
 
     def __init__(self):
+        super(StopAlgorithm, self).__init__()
         try:
             self.stop_timeout = self.ZORPCTLCONF['STOP_CHECK_TIMEOUT']
         except KeyError:
             self.stop_timeout = 5
-        super(StopAlgorithm, self).__init__()
 
         self.pid = None
 
