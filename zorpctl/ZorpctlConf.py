@@ -54,7 +54,9 @@ class ZorpctlConfig(object):
             raise KeyError(key)
 
         try:
-             value = int(value)
+             value = float(value)
+             if round(value - int(value), 6) == 0:
+                 value = int(value)
         except ValueError:
              pass
 
