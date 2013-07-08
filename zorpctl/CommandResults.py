@@ -10,12 +10,12 @@ class CommandResultSuccess(CommandResult):
     def __init__(self, msg = None, value = None):
         super(CommandResultSuccess, self).__init__(msg, value)
 
-    def __nonzero__(self):
+    def __bool__(self):
         return True
 
 class CommandResultFailure(CommandResult):
     def __init__(self, msg = None, value = None):
         super(CommandResultFailure, self).__init__(msg, value)
 
-    def __nonzero__(self):
+    def __bool__(self):
         return False

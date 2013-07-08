@@ -23,7 +23,7 @@ class InstancesConf(object):
         self.instances_conf_file = open(self.instances_conf_path, 'r')
         return self
 
-    def next(self):
+    def __next__(self):
         line = self._read()
         if line:
             return self._createInstance(line)

@@ -12,15 +12,15 @@ class RunningInstances(object):
     def __iter__(self):
         return self
 
-    def next(self):
-        instance = self.instancesconf.next()
+    def __next__(self):
+        instance = self.instancesconf.__next__()
         instance.process_num = 0
         algorithm = ProcessAlgorithm()
         algorithm.setInstance(instance)
         if algorithm.isRunning(instance.process_name):
             return instance
         else:
-            return self.next()
+            return self.__next__()
 
 class GetAlgorithm(ProcessAlgorithm):
 
