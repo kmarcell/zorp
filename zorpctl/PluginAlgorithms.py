@@ -87,7 +87,7 @@ class GetMemoryVSZAlgorithm(ProcessAlgorithm):
 
     def __init__(self):
         super(GetMemoryVSZAlgorithm, self).__init__()
- 
+
     def get(self):
         algorithm = GetProcInfoAlgorithm()
         algorithm.setInstance(self.instance)
@@ -95,10 +95,10 @@ class GetMemoryVSZAlgorithm(ProcessAlgorithm):
         if not proc_info:
             return proc_info
         return CommandResultSuccess("", int(proc_info["vsize"])/1024)
- 
+
     def execute(self):
         return self.get()
- 
+
 class GetServicesAlgorithm(ProcessAlgorithm):
 
     def __init__(self):
@@ -118,7 +118,7 @@ class GetServicesAlgorithm(ProcessAlgorithm):
         except IOError as e:
             return CommandResultFailure(e.strerror)
         try:
-            return self.services() 
+            return self.services()
         except SZIGError as e:
             return CommandResultFailure("error while communicating through szig: %s" % e.msg)
 
