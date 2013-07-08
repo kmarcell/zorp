@@ -8,8 +8,6 @@ class ZorpctlConfig(object):
         self.path = zorpctl.prefix.PATH_PREFIX + '/etc/zorp/'
 
     def __getitem__(self, key):
-        if not self.config:
-              self.parse()
         try:
              value = self.config.get('zorpctl', key)
         except ConfigParser.NoOptionError:
@@ -21,6 +19,15 @@ class ZorpctlConfig(object):
              pass
 
         return value
+
+    @property
+    def path:
+        return self._path
+
+    @path.set
+    def path(value):
+        self._path = value
+        self.parse()
 
     def parse(self):
         if not self.config.read(self.path + '/zorpctl.conf'):
