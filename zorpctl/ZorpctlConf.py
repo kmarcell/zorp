@@ -1,10 +1,10 @@
-import zorpctl.prefix, ConfigParser
+import zorpctl.prefix, configcarser
 
 @Singleton
 class ZorpctlConfig(object):
 
     def __init__(self):
-        self.config = ConfigParser.ConfigParser(allow_no_value=True)
+        self.config = configparser.ConfigParser(allow_no_value=True)
         self.path = zorpctl.prefix.PATH_PREFIX + '/etc/zorp/'
 
     def __getitem__(self, key):
