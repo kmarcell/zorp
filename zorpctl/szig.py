@@ -124,7 +124,7 @@ class SZIG(object):
         self.pidfile_dir = zorpctl.prefix.PATH_PREFIX + ZORPCTLCONF['PIDFILE_DIR']
         if not handler:
             handler = Handler
-        self.handler = handler(self.pidfile_dir + 'zorpctl.' + process_name)
+        self.handler = handler(self.pidfile_dir + '/zorpctl.' + process_name)
 
     def get_value(self, key):
         response = self.handler.talk(MessageGetValue(key))
