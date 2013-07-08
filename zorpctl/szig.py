@@ -9,6 +9,10 @@ from zorpctl.SZIGMessages import (
         MessageSetLogLevel, MessageSetLogSpec, MessageStopSession
     )
 
+PATH_PREFIX = zorpctl.prefix.PATH_PREFIX
+sys.path.append(PATH_PREFIX + '/etc/zorp')
+import zorpctl_conf as ZORPCTLCONF
+
 class Response(object):
     def __init__(self, succeeded, value = None):
         self.is_succeeded = succeeded
@@ -117,8 +121,7 @@ class Handler(object):
 class SZIG(object):
 
     def __init__(self, process_name, handler=None):
-        self.prefix = "" #TODO: @PREFIX@
-        self.pidfile_dir = self.prefix + "/var/run/zorp/"
+        self.pidfile_dir = PATH_PREFIX + ZORPCTLCONF.PIDFILE_DIR
         if not handler:
             handler = Handler
         self.handler = handler(self.pidfile_dir + 'zorpctl.' + process_name)
